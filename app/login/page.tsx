@@ -1,7 +1,12 @@
-import Link from 'next/link'
-import Messages from './messages'
+"use client";
+
+import Link from "next/link";
+import Messages from "./messages";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export default function Login() {
+  const supabase = createClientComponentClient();
+
   return (
     <div className="flex-1 flex flex-col w-full px-8 sm:max-w-md justify-center gap-2">
       <Link
@@ -21,7 +26,7 @@ export default function Login() {
           className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1"
         >
           <polyline points="15 18 9 12 15 6" />
-        </svg>{' '}
+        </svg>{" "}
         Back
       </Link>
 
@@ -60,6 +65,16 @@ export default function Login() {
         </button>
         <Messages />
       </form>
+
+      <button
+        onClick={async () => {
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: "github",
+          });
+        }}
+      >
+        Bob
+      </button>
     </div>
-  )
+  );
 }
