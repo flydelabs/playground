@@ -70,6 +70,9 @@ export default function Login() {
         onClick={async () => {
           const { data, error } = await supabase.auth.signInWithOAuth({
             provider: "github",
+            options: {
+              redirectTo: "/auth/callback",
+            },
           });
         }}
       >
