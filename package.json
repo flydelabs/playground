@@ -3,12 +3,20 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "types": "npx --yes supabase gen types typescript --project-id rfvvslzvfkyaoyngcjti --schema public > types/supabase.ts"
   },
   "dependencies": {
+    "@codemirror/lang-javascript": "^6.1.9",
+    "@react-hook/size": "^2.1.2",
     "@supabase/auth-helpers-nextjs": "latest",
     "@supabase/supabase-js": "latest",
+    "@types/file-saver": "^2.0.5",
+    "@uidotdev/usehooks": "^2.1.0",
+    "@uiw/react-codemirror": "^4.21.9",
     "autoprefixer": "10.4.14",
+    "file-saver": "^2.0.5",
+    "jszip": "^3.10.1",
     "next": "latest",
     "postcss": "8.4.24",
     "react": "18.2.0",

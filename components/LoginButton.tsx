@@ -2,13 +2,15 @@
 
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
-export default function LoginButton() {
+export default function LoginButton(props: { path?: string }) {
   async function login() {
     const supabase = createClientComponentClient();
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: `${location.origin}/auth/callback`,
+        redirectTo: `${location.origin}/auth/callback?path=${encodeURIComponent(
+          props.path ?? ""
+        )}`,
       },
     });
   }

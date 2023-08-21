@@ -1,9 +1,9 @@
 import "./globals.css";
 
-export const metadata = {
-  title: "Flyde Playground",
-  description: "Flyde Playground",
-};
+// export const metadata = {
+//   title: "Flyde Playground",
+//   description: "Flyde Playground",
+// };
 
 export default function RootLayout({
   children,
