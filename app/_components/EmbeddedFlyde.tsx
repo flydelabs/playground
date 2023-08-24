@@ -17,31 +17,32 @@ const initialPadding = [10, 10] as [number, number];
 
 console.log("version", React.version);
 
+const state = {
+  flow: {
+    node: {
+      id: "root",
+      connections: [],
+      instances: [],
+      inputs: {},
+      outputs: {},
+      inputsPosition: {},
+      outputsPosition: {},
+    },
+  },
+  boardData: {
+    viewPort: {
+      pos: { x: 0, y: 0 },
+      zoom: 1,
+    },
+    selected: [],
+    lastMousePos: { x: 0, y: 0 },
+  },
+};
+
 export default function EmbeddedFlyde(props: EmbeddedFlydeProps) {
-  const [state, setState] = useState<FlowEditorState>({
-    flow: {
-      node: {
-        id: "root",
-        connections: [],
-        instances: [],
-        inputs: {},
-        outputs: {},
-        inputsPosition: {},
-        outputsPosition: {},
-      },
-    },
-    boardData: {
-      viewPort: {
-        pos: { x: 0, y: 0 },
-        zoom: 1,
-      },
-      selected: [],
-      lastMousePos: { x: 0, y: 0 },
-    },
-  });
   const flowEditorProps: FlydeFlowEditorProps = {
     state,
-    onChangeEditorState: setState,
+    onChangeEditorState: noop,
     hideTemplatingTips: true,
     initialPadding,
     onExtractInlineNode: noop as any,

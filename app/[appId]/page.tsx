@@ -1,11 +1,6 @@
-import {
-  User,
-  createServerComponentClient,
-} from "@supabase/auth-helpers-nextjs";
+import React from "react";
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
-import LogoutButton from "../../components/LogoutButton";
-import LoginButton from "../../components/LoginButton";
-import AppView from "../_components/AppView";
 import { Database } from "@/types/supabase";
 import { App } from "@/types/entities";
 import { SimpleUser, simplifiedUser } from "@/lib/user";
