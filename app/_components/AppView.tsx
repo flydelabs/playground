@@ -23,6 +23,7 @@ import LoginButton from "@/components/LoginButton";
 import Head from "next/head";
 import NewFileButton from "./NewFileButton";
 import { on } from "events";
+import EmbeddedFlyde from "./EmbeddedFlyde";
 
 export interface AppFile {
   name: string;
@@ -232,7 +233,9 @@ export default function AppView(props: AppViewProps) {
           <header className="w-full  border-b border-b-foreground/10 flex flex-row items-center justify-between">
             Tabs
           </header>
-          <div className="h-full">CONTENT</div>
+          <div className="h-full">
+            <EmbeddedFlyde />
+          </div>
         </div>
       </main>
       <Head>

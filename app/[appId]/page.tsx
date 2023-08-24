@@ -9,8 +9,8 @@ import AppView from "../_components/AppView";
 import { Database } from "@/types/supabase";
 import { App } from "@/types/entities";
 import { SimpleUser, simplifiedUser } from "@/lib/user";
-import Head from "next/head";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
+import EmbeddedFlyde from "../_components/EmbeddedFlyde";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +64,8 @@ export default async function Index({ params }: { params: { appId: string } }) {
 
   return (
     <div className="w-full flex flex-col items-center flex-1">
-      <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
+      <EmbeddedFlyde />
+      {/* <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
         <div className="w-full max-w-4xl flex justify-between items-center p-3 text-sm text-foreground">
           <div />
           <div>
@@ -79,15 +80,7 @@ export default async function Index({ params }: { params: { appId: string } }) {
           </div>
         </div>
       </nav>
-      <AppView app={app} user={user} />
-      <Head>
-        <title>{app.title} | Flyde Playground</title>
-        <meta
-          property="og:title"
-          content={`${app.title} | Flyde Playground`}
-          key="title"
-        />
-      </Head>
+      <AppView app={app} user={user} /> */}
     </div>
   );
 }

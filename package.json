@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.1.9",
+    "@flyde/core": "^0.2.1",
+    "@flyde/flow-editor": "^0.2.4",
     "@react-hook/size": "^2.1.2",
     "@supabase/auth-helpers-nextjs": "latest",
     "@supabase/supabase-js": "latest",
@@ -21,6 +23,7 @@
     "postcss": "8.4.24",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "sass": "^1.66.1",
     "tailwindcss": "3.3.2",
     "typescript": "5.1.3"
   },
