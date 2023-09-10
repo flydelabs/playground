@@ -1,9 +1,9 @@
 import { useClickAway } from "@uidotdev/usehooks";
-import { AppFile } from "./AppView";
+import { AppFileType } from "./AppView";
 import { useState } from "react";
 
 export interface NewFileButtonProps {
-  onCreateFile: (type: AppFile["suffix"]) => void;
+  onCreateFile: (type: AppFileType) => void;
 }
 
 export default function NewFileButton({ onCreateFile }: NewFileButtonProps) {
@@ -42,7 +42,7 @@ export default function NewFileButton({ onCreateFile }: NewFileButtonProps) {
               role="menuitem"
               tabIndex={-1}
               onClick={() => {
-                onCreateFile("flyde");
+                onCreateFile(AppFileType.VISUAL_FLOW);
                 setIsMenuOpen(false);
               }}
             >
@@ -54,7 +54,7 @@ export default function NewFileButton({ onCreateFile }: NewFileButtonProps) {
               role="menuitem"
               tabIndex={-1}
               onClick={() => {
-                onCreateFile("flyde.ts");
+                onCreateFile(AppFileType.CODE_FLOW);
                 setIsMenuOpen(false);
               }}
             >

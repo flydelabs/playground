@@ -12,8 +12,8 @@ import {
   createClientComponentClient,
 } from "@supabase/auth-helpers-nextjs";
 
-import { Database, Json } from "../../types/supabase";
-import { App } from "../../types/entities";
+import { Database, Json } from "../types/supabase";
+import { App } from "../types/entities";
 import { revalidatePath } from "next/cache";
 import { useRouter, usePathname } from "next/navigation";
 
@@ -201,7 +201,11 @@ export default function AppView(props: AppViewProps) {
             <button onClick={save} disabled={!user}>
               <SaveIcon />
             </button>
-            {user ? <span>@{user.username}</span> : <LoginButton path={path} />}
+            {user ? (
+              <span>@{user.username}</span>
+            ) : (
+              <LoginButton path={path ?? ""} />
+            )}
           </div>
         </div>
       </header>
@@ -222,19 +226,23 @@ export default function AppView(props: AppViewProps) {
             />
             <NewFileButton onCreateFile={onCreateFile} />
           </header>
-          <div className="h-full">
-            <CodeEditor
-              value={activeFile.content}
-              onChange={changeActiveFileContent}
-            />
+          <div className="flex">
+            {activeFile.suffix === "flyde" && 1 == Date.now() ? (
+              <EmbeddedFlyde file={activeFile} />
+            ) : (
+              <CodeEditor
+                value={activeFile.content}
+                onChange={changeActiveFileContent}
+              />
+            )}
           </div>
         </div>
         <div className="flex flex-col w-full  flex-1">
           <header className="w-full  border-b border-b-foreground/10 flex flex-row items-center justify-between">
             Tabs
           </header>
-          <div className="h-full">
-            <EmbeddedFlyde />
+          <div className="flex h-full">
+            <EmbeddedFlyde file={activeFile} />
           </div>
         </div>
       </main>

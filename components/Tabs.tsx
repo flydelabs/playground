@@ -13,7 +13,7 @@ export interface TabsProps {
 }
 
 function fileId(file: AppFile) {
-  return `${file.name}.${file.suffix}`;
+  return `${file.name}.${file.type}`;
 }
 
 export function fileEquals(file1: AppFile, file2: AppFile) {
@@ -76,7 +76,7 @@ export default function Tabs({
         {files.map((file) =>
           fileEquals(file, activeFile) ? (
             <li
-              key={file.name + file.suffix}
+              key={file.name + file.type}
               className="flex-none flex flex-row px-3 py-2 border-b-2 border-blue-600"
             >
               {editedFile === file ? (
@@ -90,7 +90,7 @@ export default function Tabs({
                     placeholder={file.name}
                     autoFocus
                   />
-                  <span>.{file.suffix}</span>
+                  <span>.{file.type}</span>
                 </React.Fragment>
               ) : (
                 <span className="px-3 inline-block">
@@ -100,7 +100,7 @@ export default function Tabs({
                     aria-current="page"
                     onClick={() => onSetEditedFile(file)}
                   >
-                    {file.name}.{file.suffix}
+                    {file.name}.{file.type}
                     {unsavedFiles.has(file) ? "*" : ""}
                   </a>
                   <button className="ml-2" onClick={deleteFile}>
@@ -110,13 +110,13 @@ export default function Tabs({
               )}
             </li>
           ) : (
-            <li key={file.name + file.suffix} className="flex-none pr-2">
+            <li key={file.name + file.type} className="flex-none pr-2">
               <a
                 href="#"
                 className="inline-block py-2 px-3 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
                 onClick={() => onChangeActiveFile(file)}
               >
-                {file.name}.{file.suffix}
+                {file.name}.{file.type}
                 {unsavedFiles.has(file) ? "*" : ""}
               </a>
             </li>
