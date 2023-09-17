@@ -99,7 +99,9 @@ export default function AppView(props: AppViewProps) {
 
   const [events, setEvents] = React.useState<DebuggerEvent[]>([]);
 
-  useLayoutEffect(() => {
+  const [showAllEvents, setShowAllEvents] = React.useState(false);
+
+  useEffect(() => {
     runtimePlayer.start();
   }, [runtimePlayer]);
 
@@ -373,16 +375,36 @@ export default function AppView(props: AppViewProps) {
           handle={resizeHandle}
         >
           <div
-            className="flex flex-col flex-grow-0 flex-shrink-0"
+            className="flex flex-col flex-grow-0 flex-shrink-0 overflow-hidden"
             style={{ flexBasis: outputWidth }}
           >
-            <header className="w-full border-b-foreground/10 flex flex-row items-center justify-between py-3 px-4 border-b">
-              Events <button onClick={() => setEvents([])}>Clear</button>
+            <header className="w-full border-b-foreground/10 flex gap-3 flex-row items-center py-3 px-4 border-b">
+              Events{" "}
+              <div className="flex items-center">
+                <input
+                  id="default-checkbox"
+                  type="checkbox"
+                  checked={showAllEvents}
+                  onChange={(e) => setShowAllEvents(e.target.checked)}
+                />
+                <label
+                  htmlFor="default-checkbox"
+                  className="ml-1 text-xs font-medium text-gray-900 dark:text-gray-300"
+                >
+                  Include lifecycle events
+                </label>
+              </div>
+              <button
+                onClick={() => setEvents([])}
+                className="justify-end justify-items-end content-end ml-auto text-sm"
+              >
+                Clear
+              </button>
             </header>
             <div className="flex h-full  bg-slate-800 text-slate-100  overflow-auto max-h-full">
               <div className="w-full h-full">
                 <div className="h-full overflow-y-auto">
-                  <EventsViewer events={events} />
+                  <EventsViewer events={events} showAllEvents={showAllEvents} />
                 </div>
               </div>
             </div>

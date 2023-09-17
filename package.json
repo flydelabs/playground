@@ -10,6 +10,7 @@
     "@codemirror/lang-javascript": "^6.1.9",
     "@flyde/core": "^0.2.1",
     "@flyde/flow-editor": "^0.2.4",
+    "@flyde/stdlib": "^0.2.8",
     "@react-hook/size": "^2.1.2",
     "@supabase/auth-helpers-nextjs": "latest",
     "@supabase/supabase-js": "latest",
