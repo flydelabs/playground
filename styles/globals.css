@@ -44,9 +44,117 @@
 .flyde-flow-editor {
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  position: relative;
 }
 
 #__next {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
 }
+
+.resize-handle {
+  top: 0;
+  width: 5px;
+  height: 100%;
+  background: #fefefe;
+  position: absolute;
+  cursor: col-resize;
+  flex-shrink: 0;
+  flex-grow: 0;
+  left: 0;
+  bottom: 0;
+  transition: opacity 0.05s linear;
+}
+
+.resize-handle:after {
+  display: block;
+  content: "";
+  background-color: #aaa;
+  position: absolute;
+  height: 70%;
+  width: 1px;
+  left: 2px;
+  top: 15%;
+}
+
+/* CSS copied from flyde.dev docusaurus theme */
+
+.navbar__logo {
+  flex: 0 0 auto;
+  height: 2rem;
+  margin-right: 0.5rem;
+}
+
+.navbar--fixed-top {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+
+.navbar__inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.navbar__items {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.navbar__items--right {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+.navbar__brand {
+  align-items: center;
+  display: flex;
+  margin-right: 1rem;
+  min-width: 0;
+}
+
+.themedImage--dark_iaqw,
+.themedImage--light_QcnL {
+  display: initial;
+  height: 100%;
+}
+
+.navbar__brand,
+.navbar__link {
+  color: #1c1e21;
+  text-decoration: none;
+}
+
+.navbar__item {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+}
+
+.navbar {
+  background-color: white;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
+  display: flex;
+  height: 60px;
+  padding: 11px 20px;
+  font-size: 16px;
+  /* flex: 1; */
+  width: 100%;
+  line-height: 24px;
+}
+
+.navbar__item svg {
+  display: inline-block;
+  margin-top: -4px;
+}
+
+.iconExternalLink_JhmX {
+  margin-left: 0.3rem;
+}
+
+/* END of CSS copied from flyde.dev docusaurus theme */

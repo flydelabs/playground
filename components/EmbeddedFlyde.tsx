@@ -24,10 +24,17 @@ import {
   isBaseNode,
 } from "@flyde/core";
 import type { AppFile } from "./AppView";
+import { safeParse } from "@/lib/safeParse";
+import {
+  HistoryPlayer,
+  createHistoryPlayer,
+} from "@/lib/executeApp/createHistoryPlayer";
 
 export interface EmbeddedFlydeProps {
   flow: FlydeFlow;
   onChange: (flow: FlydeFlow) => void;
+  localNodes: ResolvedDependencies;
+  historyPlayer: HistoryPlayer;
 }
 
 const noop = () => {};
@@ -69,37 +76,23 @@ export interface EmbeddedFlydeFileWrapperProps {
   content: string;
   onFileChange: (content: string) => void;
   fileName: string;
-}
-
-export type Maybe<T> =
-  | { type: "ok"; data: T }
-  | { type: "error"; error: Error };
-
-function safeParse(content: string): Maybe<FlydeFlow> {
-  try {
-    return { type: "ok", data: JSON.parse(content) };
-  } catch (e) {
-    return {
-      type: "error",
-      error: e as Error,
-    };
-  }
+  localNodes: ResolvedDependencies;
+  historyPlayer: HistoryPlayer;
 }
 
 export function EmbeddedFlydeFileWrapper(props: EmbeddedFlydeFileWrapperProps) {
-  const { content, onFileChange } = props;
+  const { content, onFileChange, localNodes } = props;
   const [flow, setFlow] = useState<FlydeFlow>();
 
-  const [error, setError] = useState<Error | undefined>();
+  const [error, setError] = useState<Error>();
 
   useEffect(() => {
-    console.log("changed content!");
-    const parsed = safeParse(content);
+    const parsed = safeParse<FlydeFlow>(content);
     if (parsed.type === "ok") {
       console.log("parsed.data", parsed.data.node);
       setFlow(parsed.data);
     } else {
-      setError(parsed.error);
+      setError(parsed.error as any);
     }
   }, [content]);
 
@@ -112,7 +105,13 @@ export function EmbeddedFlydeFileWrapper(props: EmbeddedFlydeFileWrapperProps) {
 
   if (flow) {
     return (
-      <EmbeddedFlyde key={props.fileName} flow={flow} onChange={onChange} />
+      <EmbeddedFlyde
+        key={props.fileName}
+        flow={flow}
+        onChange={onChange}
+        localNodes={localNodes}
+        historyPlayer={props.historyPlayer}
+      />
     );
   } else if (error) {
     return <p>Error parsing Flyde: {error?.message}</p>;
@@ -122,21 +121,24 @@ export function EmbeddedFlydeFileWrapper(props: EmbeddedFlydeFileWrapperProps) {
 }
 
 export default function EmbeddedFlyde(props: EmbeddedFlydeProps) {
+  const { flow, localNodes, onChange } = props;
   const [state, setState] = useState<FlowEditorState>({
     ...defaultState,
-    flow: props.flow,
+    flow,
   });
   const [resolvedDependencies, setResolvedDependencies] =
     useState<ResolvedDependencies>({});
 
-  useEffect(() => {
-    loadStdLib().then((std) => {
-      setResolvedDependencies(std);
-    });
-  }, []);
+  const historyPlayer = useMemo(() => createHistoryPlayer(), []);
 
   useEffect(() => {
-    props.onChange(state.flow);
+    loadStdLib().then((stdlib) => {
+      setResolvedDependencies({ ...stdlib, ...localNodes });
+    });
+  }, [localNodes]);
+
+  useEffect(() => {
+    onChange(state.flow);
   }, [state.flow]);
 
   const flowEditorProps: FlydeFlowEditorProps = {
@@ -145,19 +147,26 @@ export default function EmbeddedFlyde(props: EmbeddedFlydeProps) {
     hideTemplatingTips: true,
     initialPadding,
     onExtractInlineNode: noop as any,
-    disableScrolling: true,
   };
 
   const onRequestImportables: DependenciesContextData["onRequestImportables"] =
     useCallback(async () => {
-      const nodes = Object.values(
+      const stdLibNodes = Object.values(
         await import("@flyde/stdlib/dist/all-browser")
       ).filter(isBaseNode) as ImportedNode[];
+
+      const bob = stdLibNodes.map((b) => ({
+        node: { ...b, source: { path: "n/a", export: "n/a" } },
+        module: "@flyde/stdlib",
+      }));
+
+      const localModules = Object.values(localNodes).map((node) => ({
+        node: { ...node, source: { path: "n/a", export: "n/a" } },
+        module: "local",
+      }));
+
       return {
-        importables: nodes.map((b) => ({
-          node: { ...b, source: { path: "n/a", export: "n/a" } },
-          module: "@flyde/stdlib",
-        })),
+        importables: [...bob, ...localModules],
         errors: [],
       };
     }, []);
@@ -172,7 +181,7 @@ export default function EmbeddedFlyde(props: EmbeddedFlydeProps) {
 
   const debuggerContextValue = React.useMemo<DebuggerContextData>(
     () => ({
-      onRequestHistory: () => Promise.resolve({ lastSamples: [], total: 0 }),
+      onRequestHistory: props.historyPlayer.requestHistory,
       // debuggerClient: ,
     }),
     []

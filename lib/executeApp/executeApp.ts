@@ -1,13 +1,16 @@
 import { AppData, AppFileType } from "@/components/AppView";
-import ts from "typescript";
-import { importToGlobalTransformer } from "./tsTransformer";
 
-import { simplifiedExecute } from "@flyde/core";
+import { ResolvedDependencies, simplifiedExecute, Debugger } from "@flyde/core";
 
 import * as stdlib from "@flyde/stdlib/dist/all-browser";
-import { exportToGlobalTransformer } from "./exportsTransformer";
+import { transpileFile } from "../transpileFile/transpileFile";
+import { CustomConsole } from "../useLocalConsole";
 
-function ensureFakeModulesOnWindow(app: AppData) {
+function ensureFakeModulesOnWindow(
+  app: AppData,
+  deps: ResolvedDependencies,
+  _debugger: Debugger
+) {
   const windowAny = window as any;
 
   const fakeRuntime = {
@@ -25,7 +28,6 @@ function ensureFakeModulesOnWindow(app: AppData) {
       }
 
       const flow = JSON.parse(maybeFile.content);
-      console.info("Loaded flow:", flow);
 
       return (inputs: any, params: any = {}) => {
         const { onOutputs, ...otherParams } = params;
@@ -37,14 +39,13 @@ function ensureFakeModulesOnWindow(app: AppData) {
           //   (await createDebugger(debuggerUrl, fullFlowPath));
 
           // debugLogger("Using debugger %o", _debugger);
-          console.log("NODE", flow.node);
           destroy = await simplifiedExecute(
             flow.node,
-            stdlib as any,
+            { ...stdlib, ...deps } as any,
             inputs ?? {},
             onOutputs,
             {
-              // _debugger: _debugger,
+              _debugger,
               onCompleted: (data) => {
                 void (async function () {
                   // if (_debugger && _debugger.destroy) {
@@ -71,25 +72,12 @@ function ensureFakeModulesOnWindow(app: AppData) {
   };
 }
 
-export function transpileFile(fileName: string, content: string) {
-  const transpileOutput = ts.transpileModule(content, {
-    compilerOptions: {
-      module: ts.ModuleKind.ESNext,
-      target: ts.ScriptTarget.ES2022,
-    },
-    transformers: {
-      before: [
-        exportToGlobalTransformer(fileName),
-        importToGlobalTransformer(),
-      ],
-    },
-  });
-
-  return transpileOutput.outputText.replace(/export\s*{\s*};\s*/g, "");
-}
-
-export function executeApp(app: AppData) {
-  ensureFakeModulesOnWindow(app);
+export function executeApp(
+  app: AppData,
+  deps: ResolvedDependencies,
+  _debugger: Debugger
+) {
+  ensureFakeModulesOnWindow(app, deps, _debugger);
 
   const entry = app.files.find((file) => file.type === AppFileType.ENTRY_POINT);
 
@@ -97,30 +85,14 @@ export function executeApp(app: AppData) {
     throw new Error("No entry point found");
   }
 
-  const codeNode = app.files.find(
-    (file) => file.type === AppFileType.CODE_FLOW
-  );
-
-  if (codeNode) {
-    const t = transpileFile(
-      codeNode.name + "." + codeNode.type,
-      codeNode.content
-    );
-    console.info("CODE: Code to run:");
-    console.info(t);
-    console.info("CODE: End code to run");
-  }
-
   const transpileOutput = transpileFile(
     entry.name + "." + entry.type,
     entry.content
   );
 
-  const codeToRun = `(async function executeApp() {
+  const codeToRun = `async () => {
     ${transpileOutput}
-  })()`;
+  }`;
 
-  console.info("Code to run:", codeToRun);
-
-  eval(codeToRun);
+  eval(codeToRun)();
 }

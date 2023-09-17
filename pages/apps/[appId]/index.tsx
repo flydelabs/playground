@@ -1,4 +1,5 @@
 import AppView from "@/components/AppView";
+import { FlydeHeader } from "@/components/FlydeHeader";
 import LoginButton from "@/components/LoginButton";
 import LogoutButton from "@/components/LogoutButton";
 import { SimpleUser, simplifiedUser } from "@/lib/user";
@@ -46,8 +47,8 @@ export default function Page({
 
   return (
     <div className="w-full flex flex-col items-center flex-1">
-      {/* <EmbeddedFlyde /> */}
-      <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
+      <FlydeHeader />
+      {/* <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
         <div className="w-full max-w-4xl flex justify-between items-center p-3 text-sm text-foreground">
           <div />
           <div>
@@ -61,7 +62,7 @@ export default function Page({
             )}
           </div>
         </div>
-      </nav>
+      </nav> */}
       <AppView app={app} user={user} />
     </div>
   );
