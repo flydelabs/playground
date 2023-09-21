@@ -10,7 +10,7 @@ import Tabs, { fileEquals } from "./Tabs";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 import { Database } from "../types/supabase";
-import { App } from "../types/entities";
+import { PlaygroundApp } from "../types/entities";
 import { useRouter, usePathname } from "next/navigation";
 
 import { isClient } from "@/lib/isClient";
@@ -37,6 +37,10 @@ import { createRuntimeClientDebugger } from "@/lib/executeApp/createRuntimePlaye
 import { useCustomConsole } from "@/lib/useLocalConsole";
 import { Resizable } from "react-resizable";
 import { EventsViewer } from "./EventsViewer";
+import { HomeIcon } from "./Icons/HomeIcon";
+import Link from "next/link";
+import { toast } from "@/lib/toast";
+import { Popover } from "react-tiny-popover";
 
 export enum AppFileType {
   VISUAL_FLOW = "flyde",
@@ -57,13 +61,13 @@ export interface AppData {
 }
 
 export interface AppViewProps {
-  app: App;
-  user?: SimpleUser;
+  app: PlaygroundApp;
+  user: SimpleUser | null;
 }
 
 const resizeHandle = <div className="resize-handle" />;
 
-function getFileToShow(app: App): AppFile {
+function getFileToShow(app: PlaygroundApp): AppFile {
   const firstVisualFile = app.files.find(
     (file) => file.type === AppFileType.VISUAL_FLOW
   );
@@ -145,6 +149,8 @@ export default function AppView(props: AppViewProps) {
     }
     const blob = await zip.generateAsync({ type: "blob" });
     saveAs(blob, "FlydeApp.zip");
+
+    toast("FlydeApp.zip downloaded");
   }
 
   async function fork() {
@@ -157,10 +163,11 @@ export default function AppView(props: AppViewProps) {
       .select();
 
     if (newApp.data && newApp.data.length === 1) {
-      router.push(`/${newApp.data[0].id}`);
+      router.push(`/apps/${newApp.data[0].id}`);
     } else {
       throw new Error("Fork app did not return a new app id");
     }
+    toast("App forked!");
   }
 
   async function save() {
@@ -173,10 +180,15 @@ export default function AppView(props: AppViewProps) {
       .eq("id", props.app.id);
 
     setSavedAppData(draftAppData);
+    toast("App saved!");
   }
 
   function generateShareUrl() {
-    const text = `🚀 Just built something awesome with @FlydeDev's visual programming playground!\n\nCheck it out and start creating your own!`;
+    const prologue =
+      props.user?.id === app.creator_id
+        ? `I just built something awesome `
+        : `Check out this awesome app built `;
+    const text = `🚀 ${prologue} with @FlydeDev's visual programming playground!\n\nCheck it out and start creating your own!`;
     const url = isClient() ? `${location.href}` : "in server, no url";
     const hashtags = [`Flyde`, `VisualProgramming`];
 
@@ -285,21 +297,62 @@ export default function AppView(props: AppViewProps) {
     setLocalNodes(deps);
   }, [activeFile]);
 
+  const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
+
+  const popoverMenu = (
+    <div
+      // ref={ref as any}
+      className="absolute left-0 z-100 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+      role="menu"
+      aria-orientation="vertical"
+      aria-labelledby="menu-button"
+      tabIndex={-1}
+    >
+      <div className="py-1" role="none">
+        {/* <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" --> */}
+        <Link
+          href={`/users/${user?.id}`}
+          className="text-gray-700 block px-4 py-2 text-sm"
+          role="menuitem"
+          tabIndex={-1}
+          onClick={() => {
+            setIsUserMenuOpen(false);
+          }}
+        >
+          My apps
+        </Link>
+
+        <form
+          action="/auth/sign-out"
+          method="post"
+          className="text-gray-700 block px-4 py-2 text-sm"
+        >
+          <button>Sign out</button>
+        </form>
+      </div>
+    </div>
+  );
+
   return (
     <React.Fragment>
-      <header className="w-full flex flex-col justify-center h-16 border-b-foreground/10 border-b bg-gray-200">
-        <div className="w-full  flex flex-row justify-between p-3 text-foreground px-16">
+      <header className="w-full flex flex-col  h-16 border-b-foreground/10 border-b bg-gray-200 top-15 z-10">
+        <div className="w-full  flex flex-row p-3 text-foreground pl-8 pr-8">
+          <div className="flex flex-row items-center">
+            <Link href="/">
+              <HomeIcon />
+            </Link>
+          </div>
           <input
             value={draftAppData.title}
             onChange={(e) =>
               setDraftAppData((prev) => ({ ...prev, title: e.target.value }))
             }
             placeholder="App's title goes here"
-            className="bg-transparent text-foreground .hover:border-b-foreground hover:border-b transition-color duration-50 mr-3 "
+            className="bg-transparent text-foreground .hover:border-b-foreground hover:border-b transition-color duration-50 flex-1 max-w-lg mr-auto ml-5"
           />
           <div>
             <button
-              className="py-2 px-4 rounded-md no-underline bg-green-400 hover:bg-green-600"
+              className="py-2 px-4 rounded-md no-underline bg-blue-200 hover:bg-blue-300 mx-4"
               onClick={() =>
                 executeApp(draftAppData, localNodes as any, _debugger)
               }
@@ -321,7 +374,21 @@ export default function AppView(props: AppViewProps) {
               <SaveIcon />
             </button>
             {user ? (
-              <span>@{user.username}</span>
+              <Popover
+                isOpen={isUserMenuOpen}
+                positions={["left"]} // preferred positions by priority
+                content={popoverMenu}
+                padding={80}
+                // align="start"
+                onClickOutside={() => setIsUserMenuOpen(false)}
+              >
+                <button
+                  className="text-base"
+                  onClick={() => setIsUserMenuOpen((prev) => !prev)}
+                >
+                  @{user.username}
+                </button>
+              </Popover>
             ) : (
               <LoginButton path={path ?? ""} />
             )}
@@ -376,7 +443,7 @@ export default function AppView(props: AppViewProps) {
         >
           <div
             className="flex flex-col flex-grow-0 flex-shrink-0 overflow-hidden"
-            style={{ flexBasis: outputWidth }}
+            style={{ width: outputWidth }}
           >
             <header className="w-full border-b-foreground/10 flex gap-3 flex-row items-center py-3 px-4 border-b">
               Events{" "}

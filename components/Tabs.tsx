@@ -72,7 +72,7 @@ export default function Tabs({
 
   return (
     <div className="text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-700">
-      <ul className="flex flex-wrap -mb-px px-5 mt-1">
+      <ul className="flex -mb-px px-5 mt-1 flex-nowrap">
         {files.map((file) =>
           fileEquals(file, activeFile) ? (
             <li
@@ -110,7 +110,10 @@ export default function Tabs({
               )}
             </li>
           ) : (
-            <li key={file.name + file.type} className="flex-none pr-2">
+            <li
+              key={file.name + file.type}
+              className="flex-none pr-2 flex-shrink-0"
+            >
               <a
                 href="#"
                 className="inline-block py-2 px-3 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"

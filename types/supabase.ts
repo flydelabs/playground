@@ -13,6 +13,7 @@ export interface Database {
         Row: {
           creation_date: string
           creator_id: string | null
+          creator_name: string | null
           files: Json
           forked_from: number | null
           id: string
@@ -23,6 +24,7 @@ export interface Database {
         Insert: {
           creation_date?: string
           creator_id?: string | null
+          creator_name?: string | null
           files: Json
           forked_from?: number | null
           id?: string
@@ -33,6 +35,7 @@ export interface Database {
         Update: {
           creation_date?: string
           creator_id?: string | null
+          creator_name?: string | null
           files?: Json
           forked_from?: number | null
           id?: string
