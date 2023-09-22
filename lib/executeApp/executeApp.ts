@@ -1,10 +1,14 @@
 import { AppData, AppFileType } from "@/components/AppView";
 
-import { ResolvedDependencies, simplifiedExecute, Debugger } from "@flyde/core";
+import {
+  ResolvedDependencies,
+  simplifiedExecute,
+  Debugger,
+  isBaseNode,
+} from "@flyde/core";
 
 import * as stdlib from "@flyde/stdlib/dist/all-browser";
 import { transpileFile } from "../transpileFile/transpileFile";
-import { CustomConsole } from "../useLocalConsole";
 
 function ensureFakeModulesOnWindow(
   app: AppData,
@@ -15,10 +19,6 @@ function ensureFakeModulesOnWindow(
 
   const fakeRuntime = {
     loadFlow: (path: string) => {
-      console.log(
-        path,
-        app.files.map((f) => f.name + f.type)
-      );
       const maybeFile = app.files.find(
         (file) => file.name + "." + file.type === path
       );
@@ -39,9 +39,20 @@ function ensureFakeModulesOnWindow(
           //   (await createDebugger(debuggerUrl, fullFlowPath));
 
           // debugLogger("Using debugger %o", _debugger);
+          const fixedStdlib = Object.entries(stdlib).reduce(
+            (acc, [key, val]) => {
+              if (isBaseNode(val)) {
+                acc[val.id] = val;
+                return acc;
+              } else {
+                return acc;
+              }
+            },
+            {} as any
+          );
           destroy = await simplifiedExecute(
             flow.node,
-            { ...stdlib, ...deps } as any,
+            { ...fixedStdlib, ...deps } as any,
             inputs ?? {},
             onOutputs,
             {

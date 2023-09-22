@@ -20,10 +20,10 @@ import Head from "next/head";
 import NewFileButton from "./NewFileButton";
 import { EmbeddedFlydeFileWrapper } from "./EmbeddedFlyde";
 
-import { defaultNode } from "../lib/defaultNode";
 import { getDefaultContent } from "@/lib/defaultContent";
 import { executeApp } from "@/lib/executeApp/executeApp";
 import { Ok, safeParse } from "@/lib/safeParse";
+
 import {
   DebuggerEvent,
   FlydeFlow,
@@ -41,12 +41,13 @@ import { HomeIcon } from "./Icons/HomeIcon";
 import Link from "next/link";
 import { toast } from "@/lib/toast";
 import { Popover } from "react-tiny-popover";
+import { downloadApp } from "@/lib/downloadApp";
+import { toFilename } from "@/lib/toFilename";
 
 export enum AppFileType {
   VISUAL_FLOW = "flyde",
   CODE_FLOW = "flyde.ts",
-  CODE = "ts",
-  ENTRY_POINT = "main.ts",
+  ENTRY_POINT = "entry",
 }
 
 export interface AppFile {
@@ -71,7 +72,8 @@ function getFileToShow(app: PlaygroundApp): AppFile {
   const firstVisualFile = app.files.find(
     (file) => file.type === AppFileType.VISUAL_FLOW
   );
-  return firstVisualFile ?? app.files[0];
+  // return firstVisualFile ?? app.files[0];
+  return app.files[0];
 }
 
 export default function AppView(props: AppViewProps) {
@@ -100,6 +102,13 @@ export default function AppView(props: AppViewProps) {
     // player.start();
     return player;
   }, []);
+
+  useEffect(() => {
+    // write filename to hash
+    if (isClient()) {
+      console.log("write filename to hash");
+    }
+  }, [activeFile]);
 
   const [events, setEvents] = React.useState<DebuggerEvent[]>([]);
 
@@ -139,19 +148,6 @@ export default function AppView(props: AppViewProps) {
 
     return unsavedFiles;
   }, [draftAppData, savedAppData]);
-
-  async function downloadZip() {
-    const { default: JSZip } = await import("jszip");
-    const { default: saveAs } = await import("file-saver");
-    const zip = new JSZip();
-    for (const file of draftAppData.files) {
-      zip.file(file.name, file.content);
-    }
-    const blob = await zip.generateAsync({ type: "blob" });
-    saveAs(blob, "FlydeApp.zip");
-
-    toast("FlydeApp.zip downloaded");
-  }
 
   async function fork() {
     const newApp = await supabase
@@ -301,7 +297,6 @@ export default function AppView(props: AppViewProps) {
 
   const popoverMenu = (
     <div
-      // ref={ref as any}
       className="absolute left-0 z-100 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
       role="menu"
       aria-orientation="vertical"
@@ -309,7 +304,6 @@ export default function AppView(props: AppViewProps) {
       tabIndex={-1}
     >
       <div className="py-1" role="none">
-        {/* <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" --> */}
         <Link
           href={`/users/${user?.id}`}
           className="text-gray-700 block px-4 py-2 text-sm"
@@ -332,6 +326,8 @@ export default function AppView(props: AppViewProps) {
       </div>
     </div>
   );
+
+  const title = `${savedAppData.title} | Flyde Playground`;
 
   return (
     <React.Fragment>
@@ -364,10 +360,10 @@ export default function AppView(props: AppViewProps) {
             <a href={generateShareUrl()} target="_blank">
               <ShareIcon />
             </a>
-            <button onClick={downloadZip}>
+            <button onClick={() => downloadApp(draftAppData)}>
               <DownloadIcon />
             </button>
-            <button onClick={fork} disabled={!user}>
+            <button onClick={fork}>
               <ForkIcon />
             </button>
             <button onClick={save} disabled={!user}>
@@ -479,7 +475,7 @@ export default function AppView(props: AppViewProps) {
         </Resizable>
       </main>
       <Head>
-        <title>{savedAppData.title} | Flyde Playground</title>
+        <title>{title}</title>
         <meta
           property="og:title"
           content={`${savedAppData.title} | Flyde Playground`}

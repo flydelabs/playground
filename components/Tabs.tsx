@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
-import { AppFile } from "./AppView";
+import { AppFile, AppFileType } from "./AppView";
+import { toFilename } from "@/lib/toFilename";
 
 export interface TabsProps {
   files: AppFile[];
@@ -70,6 +71,15 @@ export default function Tabs({
     onRenameFile(activeFile, `${editedFileName} (${i})`);
   }
 
+  function fileLabel(file: AppFile) {
+    return (
+      <React.Fragment>
+        {toFilename(file)}
+        {unsavedFiles.has(file) ? "*" : ""}
+      </React.Fragment>
+    );
+  }
+
   return (
     <div className="text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-700">
       <ul className="flex -mb-px px-5 mt-1 flex-nowrap">
@@ -100,12 +110,13 @@ export default function Tabs({
                     aria-current="page"
                     onClick={() => onSetEditedFile(file)}
                   >
-                    {file.name}.{file.type}
-                    {unsavedFiles.has(file) ? "*" : ""}
+                    {fileLabel(file)}
                   </a>
-                  <button className="ml-2" onClick={deleteFile}>
-                    x
-                  </button>
+                  {file.type !== AppFileType.ENTRY_POINT ? (
+                    <button className="ml-2" onClick={deleteFile}>
+                      x
+                    </button>
+                  ) : null}
                 </span>
               )}
             </li>
@@ -119,8 +130,7 @@ export default function Tabs({
                 className="inline-block py-2 px-3 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
                 onClick={() => onChangeActiveFile(file)}
               >
-                {file.name}.{file.type}
-                {unsavedFiles.has(file) ? "*" : ""}
+                {fileLabel(file)}
               </a>
             </li>
           )

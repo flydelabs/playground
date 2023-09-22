@@ -17,6 +17,7 @@ export interface Database {
           files: Json
           forked_from: number | null
           id: string
+          indexContent: string | null
           last_updated_date: string
           title: string
           view_count: number
@@ -28,6 +29,7 @@ export interface Database {
           files: Json
           forked_from?: number | null
           id?: string
+          indexContent?: string | null
           last_updated_date?: string
           title: string
           view_count?: number
@@ -39,6 +41,7 @@ export interface Database {
           files?: Json
           forked_from?: number | null
           id?: string
+          indexContent?: string | null
           last_updated_date?: string
           title?: string
           view_count?: number

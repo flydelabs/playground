@@ -4,13 +4,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "types": "npx --yes supabase gen types typescript --project-id rfvvslzvfkyaoyngcjti --schema public > types/supabase.ts"
+    "types": "npx --yes supabase gen types typescript --project-id rfvvslzvfkyaoyngcjti --schema public > types/supabase.ts",
+    "bundle-types": "npm run bundle-types:core && npm run bundle-types:runtime",
+    "bundle-types:core": "dts-bundle --name @flyde/core --main node_modules/@flyde/core/dist/index.d.ts --out ../../../../types/@flyde-core.d.ts",
+    "bundle-types:runtime": "dts-bundle --name @flyde/runtime --main node_modules/@flyde/runtime/dist/index.d.ts --out ../../../../types/@flyde-runtime.d.ts"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.1.9",
     "@flyde/core": "^0.2.1",
     "@flyde/flow-editor": "^0.2.4",
     "@flyde/stdlib": "^0.2.8",
+    "@monaco-editor/react": "^4.5.2",
     "@react-hook/size": "^2.1.2",
     "@supabase/auth-helpers-nextjs": "latest",
     "@supabase/supabase-js": "latest",
@@ -18,6 +22,7 @@
     "@uidotdev/usehooks": "^2.1.0",
     "@uiw/react-codemirror": "^4.21.9",
     "autoprefixer": "10.4.14",
+    "dts-bundle": "^0.7.3",
     "file-saver": "^2.0.5",
     "jszip": "^3.10.1",
     "next": "^13.4.20-canary.5",
@@ -35,6 +40,7 @@
     "@types/node": "20.3.1",
     "@types/react": "18.2.12",
     "@types/react-dom": "18.2.5",
-    "encoding": "^0.1.13"
+    "encoding": "^0.1.13",
+    "raw-loader": "^4.0.2"
   }
 }
