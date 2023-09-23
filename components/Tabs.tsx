@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { AppFile, AppFileType } from "./AppView";
 import { toFilename } from "@/lib/toFilename";
+import { InfoTooltip } from "./InfoToolip";
 
 export interface TabsProps {
   files: AppFile[];
@@ -76,6 +77,12 @@ export default function Tabs({
       <React.Fragment>
         {toFilename(file)}
         {unsavedFiles.has(file) ? "*" : ""}
+        {file.type === AppFileType.ENTRY_POINT ? (
+          <InfoTooltip
+            className="ml-2"
+            content="This is the entry point file that is ran when you click the 'Run' button. It showcases how Flyde flows can be loaded from existing code."
+          />
+        ) : null}
       </React.Fragment>
     );
   }

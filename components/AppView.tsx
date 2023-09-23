@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useLayoutEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import CodeEditor from "./CodeEditor";
 import SaveIcon from "./Icons/SaveIcon";
 import DownloadIcon from "./Icons/DownloadIcon";
@@ -13,7 +13,6 @@ import { Database } from "../types/supabase";
 import { PlaygroundApp } from "../types/entities";
 import { useRouter, usePathname } from "next/navigation";
 
-import { isClient } from "@/lib/isClient";
 import { SimpleUser } from "@/lib/user";
 import LoginButton from "@/components/LoginButton";
 import Head from "next/head";
@@ -34,7 +33,6 @@ import { transpileCodeNodes } from "@/lib/transpileCodeFlow";
 import { createHistoryPlayer } from "@/lib/executeApp/createHistoryPlayer";
 import { createRuntimePlayer, useLocalStorage } from "@flyde/flow-editor";
 import { createRuntimeClientDebugger } from "@/lib/executeApp/createRuntimePlayerDebugger";
-import { useCustomConsole } from "@/lib/useLocalConsole";
 import { Resizable } from "react-resizable";
 import { EventsViewer } from "./EventsViewer";
 import { HomeIcon } from "./Icons/HomeIcon";
@@ -42,7 +40,9 @@ import Link from "next/link";
 import { toast } from "@/lib/toast";
 import { Popover } from "react-tiny-popover";
 import { downloadApp } from "@/lib/downloadApp";
-import { toFilename } from "@/lib/toFilename";
+import { IconBtn } from "./IconBtn";
+import { InfoTooltip } from "./InfoToolip";
+import { Tooltip } from "react-tooltip";
 
 export enum AppFileType {
   VISUAL_FLOW = "flyde",
@@ -64,6 +64,7 @@ export interface AppData {
 export interface AppViewProps {
   app: PlaygroundApp;
   user: SimpleUser | null;
+  baseDomain: string;
 }
 
 const resizeHandle = <div className="resize-handle" />;
@@ -102,13 +103,6 @@ export default function AppView(props: AppViewProps) {
     // player.start();
     return player;
   }, []);
-
-  useEffect(() => {
-    // write filename to hash
-    if (isClient()) {
-      console.log("write filename to hash");
-    }
-  }, [activeFile]);
 
   const [events, setEvents] = React.useState<DebuggerEvent[]>([]);
 
@@ -179,20 +173,24 @@ export default function AppView(props: AppViewProps) {
     toast("App saved!");
   }
 
-  function generateShareUrl() {
+  function shareOnX() {
     const prologue =
       props.user?.id === app.creator_id
         ? `I just built something awesome `
         : `Check out this awesome app built `;
-    const text = `🚀 ${prologue} with @FlydeDev's visual programming playground!\n\nCheck it out and start creating your own!`;
-    const url = isClient() ? `${location.href}` : "in server, no url";
+    const text = `🚀 ${prologue} with the @FlydeDev visual programming playground`;
+    const url = `${props.baseDomain}/apps/${app.id}`;
     const hashtags = [`Flyde`, `VisualProgramming`];
 
-    return `https://twitter.com/share?text=${encodeURIComponent(
+    const shareUrl = `https://twitter.com/share?text=${encodeURIComponent(
       text
     )}&url=${encodeURIComponent(url)}&hashtags=${encodeURIComponent(
       hashtags.join(",")
     )}`;
+
+    const windowOptions =
+      "scrollbars=yes,resizable=yes,toolbar=no,location=yes,width=550,height=420,top=200,left=700";
+    window.open(shareUrl, "Twitter / X", windowOptions);
   }
 
   const changeActiveFileContent = useCallback(
@@ -328,14 +326,19 @@ export default function AppView(props: AppViewProps) {
   );
 
   const title = `${savedAppData.title} | Flyde Playground`;
-
+  // <div className="w-full h-full flex flex-col items-center flex-1">
   return (
-    <React.Fragment>
-      <header className="w-full flex flex-col  h-16 border-b-foreground/10 border-b bg-gray-200 top-15 z-10">
+    <div className="app-view-container h-full flex flex-col w-full">
+      <header className="w-full flex flex-col  h-16 border-b-foreground/10 border-b bg-gray-200">
         <div className="w-full  flex flex-row p-3 text-foreground pl-8 pr-8">
           <div className="flex flex-row items-center">
-            <Link href="/">
+            <Link
+              href="/"
+              className="w-6 h-6 fill-blue-600 mb-0.5"
+              data-tooltip-id="home"
+            >
               <HomeIcon />
+              <Tooltip content="Back to apps list" id="home" />
             </Link>
           </div>
           <input
@@ -357,18 +360,32 @@ export default function AppView(props: AppViewProps) {
             </button>
           </div>
           <div className="flex flex-row gap-4 items-center">
-            <a href={generateShareUrl()} target="_blank">
-              <ShareIcon />
-            </a>
-            <button onClick={() => downloadApp(draftAppData)}>
-              <DownloadIcon />
-            </button>
-            <button onClick={fork}>
-              <ForkIcon />
-            </button>
-            <button onClick={save} disabled={!user}>
-              <SaveIcon />
-            </button>
+            <IconBtn
+              onClick={shareOnX}
+              tooltip="Share on X"
+              svgIcon={<ShareIcon />}
+            />
+            <IconBtn
+              onClick={() => downloadApp(draftAppData)}
+              tooltip="Download app"
+              svgIcon={<DownloadIcon />}
+            />
+
+            <IconBtn
+              onClick={fork}
+              tooltip="Fork app"
+              disabledTooltip="You need to be logged in to fork"
+              disabled={!user}
+              svgIcon={<ForkIcon />}
+            />
+            <IconBtn
+              onClick={() => save()}
+              disabled={!user}
+              tooltip="Save app"
+              disabledTooltip="You need to be logged in to save"
+              svgIcon={<SaveIcon />}
+            />
+
             {user ? (
               <Popover
                 isOpen={isUserMenuOpen}
@@ -391,8 +408,8 @@ export default function AppView(props: AppViewProps) {
           </div>
         </div>
       </header>
-      <main className="w-full h-full flex flex-row flex-1">
-        <div className="flex flex-col w-full border-r border-r-foreground/10 flex-1">
+      <main className="w-full flex flex-row flex-grow h-full overflow-y-auto">
+        <div className="flex flex-col w-full border-r border-r-foreground/10 flex-grow">
           <header className="w-full border-b border-b-foreground/10 flex flex-row items-center">
             <Tabs
               files={draftAppData.files}
@@ -408,7 +425,7 @@ export default function AppView(props: AppViewProps) {
             />
             <NewFileButton onCreateFile={onCreateFile} />
           </header>
-          <div className="h-full">
+          <div className="flex-grow overflow-y-auto h-full">
             {activeFile.type === AppFileType.VISUAL_FLOW ? (
               <EmbeddedFlydeFileWrapper
                 localNodes={localNodes as ResolvedDependencies}
@@ -454,7 +471,8 @@ export default function AppView(props: AppViewProps) {
                   htmlFor="default-checkbox"
                   className="ml-1 text-xs font-medium text-gray-900 dark:text-gray-300"
                 >
-                  Include lifecycle events
+                  Include lifecycle events{" "}
+                  <InfoTooltip content="By default, only new input, output and error events are shown. Select this to view processing state change events, and input queue size change events" />
                 </label>
               </div>
               <button
@@ -464,12 +482,8 @@ export default function AppView(props: AppViewProps) {
                 Clear
               </button>
             </header>
-            <div className="flex h-full  bg-slate-800 text-slate-100  overflow-auto max-h-full">
-              <div className="w-full h-full">
-                <div className="h-full overflow-y-auto">
-                  <EventsViewer events={events} showAllEvents={showAllEvents} />
-                </div>
-              </div>
+            <div className="flex  bg-slate-800 text-slate-100  overflow-y-auto h-full">
+              <EventsViewer events={events} showAllEvents={showAllEvents} />
             </div>
           </div>
         </Resizable>
@@ -482,6 +496,6 @@ export default function AppView(props: AppViewProps) {
           key="title"
         />
       </Head>
-    </React.Fragment>
+    </div>
   );
 }

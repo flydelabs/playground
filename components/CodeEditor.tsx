@@ -1,8 +1,9 @@
 "use client";
 
 import useSize from "@react-hook/size";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Editor, useMonaco } from "@monaco-editor/react";
+import { configureMonaco } from "@/lib/configureMonaco";
 
 export interface CodeEditorProps {
   value: string;
@@ -21,11 +22,16 @@ export default function CodeEditor({ onChange, value }: CodeEditorProps) {
 
   useEffect(() => {
     if (monaco) {
-      // console.log({ flydeCoreBundledDts, flydeRuntimeBundledDts });
-
-      (window as any).monaco = monaco;
+      configureMonaco(monaco);
     }
   }, [monaco]);
+
+  const options = useMemo(() => {
+    return {
+      minimap: { enabled: false },
+      scrollbar: { verticalScrollbarSize: 3 },
+    };
+  }, []);
 
   return (
     // <div ref={target}>
@@ -35,15 +41,25 @@ export default function CodeEditor({ onChange, value }: CodeEditorProps) {
     //     extensions={[javascript({ typescript: true })]}
     //     onChange={props.onChange}
     //   /> */}
-    <Editor
-      // height="90vh"
-      className="pt-2"
-      defaultLanguage="typescript"
-      defaultValue={value}
-      onChange={_onChange}
-      options={{ minimap: { enabled: false } }}
-      // onValidate={handleEditorValidation}
-    />
+    <div className=" h-full">
+      <Editor
+        height="100%"
+        className="pt-2"
+        defaultLanguage="typescript"
+        defaultValue={value}
+        onChange={_onChange}
+        options={options}
+        // onValidate={handleEditorValidation}
+      />
+      //{" "}
+      {/* {"x"
+      //   .repeat(2)
+      //   .split("")
+      //   .map((_, idx) => (
+      //     <div className="m-10">{idx}</div>
+      //   ))} */}
+    </div>
+
     // </div>
   );
 }

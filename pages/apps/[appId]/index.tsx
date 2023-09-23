@@ -12,6 +12,7 @@ import { useRouter } from "next/router";
 export const getServerSideProps: GetServerSideProps<{
   app: PlaygroundApp;
   user: SimpleUser | null;
+  baseDomain: string;
 }> = async (context) => {
   const supabase = createPagesServerClient<Database>(context);
 
@@ -31,10 +32,13 @@ export const getServerSideProps: GetServerSideProps<{
     throw new Error("App not found");
   }
 
+  const baseDomain = `https://${context.req.headers.host ?? "play.flyde.dev"}`;
+
   return {
     props: {
       app: res.data as PlaygroundApp,
       user: user ? simplifiedUser(user) : null,
+      baseDomain,
     },
   };
 };
@@ -42,12 +46,9 @@ export const getServerSideProps: GetServerSideProps<{
 export default function Page({
   app,
   user,
+  baseDomain,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const router = useRouter();
 
-  return (
-    <div className="w-full h-full flex flex-col items-center flex-1">
-      <AppView app={app} user={user} />
-    </div>
-  );
+  return <AppView app={app} user={user} baseDomain={baseDomain} />;
 }
