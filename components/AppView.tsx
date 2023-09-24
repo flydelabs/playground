@@ -114,7 +114,7 @@ export default function AppView(props: AppViewProps) {
 
   const _debugger = React.useMemo(() => {
     return createRuntimeClientDebugger(runtimePlayer, historyPlayer);
-  }, []);
+  }, [historyPlayer, runtimePlayer]);
 
   useEffect(() => {
     _debugger.onBatchedEvents((events) => {
@@ -285,7 +285,7 @@ export default function AppView(props: AppViewProps) {
     );
 
     setLocalNodes(deps);
-  }, [activeFile]);
+  }, [activeFile, draftAppData.files]);
 
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
 

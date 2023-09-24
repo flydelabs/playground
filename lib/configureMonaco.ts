@@ -2,7 +2,7 @@ import flydeCoreBundledDts from "!raw-loader!../types/@flyde-core.d.ts";
 import flydeRuntimeBundledDts from "!raw-loader!../types/@flyde-runtime.d.ts";
 
 export function configureMonaco(
-  monaco: typeof import("/Users/gabrielgrinberg/projects/flyde-playground/node_modules/monaco-editor/esm/vs/editor/editor.api")
+  monaco: typeof import("monaco-editor/esm/vs/editor/editor.api")
 ) {
   monaco.languages.typescript.typescriptDefaults.addExtraLib(
     flydeCoreBundledDts,

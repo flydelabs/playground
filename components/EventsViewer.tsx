@@ -171,7 +171,7 @@ export function EventsViewer(props: EventsViewerProps) {
   if (props.events.length === 0) {
     return (
       <div className="text-slate-400 py-8 px-8">
-        Events from Flyde's debugger will appear here once you run the app.
+        Events from Flyde&apos;s debugger will appear here once you run the app.
       </div>
     );
   } else if (filtered.length === 0) {

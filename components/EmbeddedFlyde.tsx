@@ -77,7 +77,7 @@ export interface EmbeddedFlydeFileWrapperProps {
 }
 
 export function EmbeddedFlydeFileWrapper(props: EmbeddedFlydeFileWrapperProps) {
-  const { content, onFileChange, localNodes } = props;
+  const { content, onFileChange, localNodes, historyPlayer } = props;
   const [flow, setFlow] = useState<FlydeFlow>();
 
   const [error, setError] = useState<Error>();
@@ -106,7 +106,7 @@ export function EmbeddedFlydeFileWrapper(props: EmbeddedFlydeFileWrapperProps) {
         flow={flow}
         onChange={onChange}
         localNodes={localNodes}
-        historyPlayer={props.historyPlayer}
+        historyPlayer={historyPlayer}
       />
     );
   } else if (error) {
@@ -117,15 +117,13 @@ export function EmbeddedFlydeFileWrapper(props: EmbeddedFlydeFileWrapperProps) {
 }
 
 export default function EmbeddedFlyde(props: EmbeddedFlydeProps) {
-  const { flow, localNodes, onChange } = props;
+  const { flow, localNodes, onChange, historyPlayer } = props;
   const [state, setState] = useState<FlowEditorState>({
     ...defaultState,
     flow,
   });
   const [resolvedDependencies, setResolvedDependencies] =
     useState<ResolvedDependencies>({});
-
-  const historyPlayer = useMemo(() => createHistoryPlayer(), []);
 
   useEffect(() => {
     loadStdLib().then((stdlib) => {
@@ -135,7 +133,7 @@ export default function EmbeddedFlyde(props: EmbeddedFlydeProps) {
 
   useEffect(() => {
     onChange(state.flow);
-  }, [state.flow]);
+  }, [onChange, state.flow]);
 
   const flowEditorProps: FlydeFlowEditorProps = {
     state,
@@ -165,7 +163,7 @@ export default function EmbeddedFlyde(props: EmbeddedFlydeProps) {
         importables: [...bob, ...localModules],
         errors: [],
       };
-    }, []);
+    }, [localNodes]);
 
   const depsContextValue = useMemo<DependenciesContextData>(() => {
     return {
@@ -173,14 +171,13 @@ export default function EmbeddedFlyde(props: EmbeddedFlydeProps) {
       onImportNode: noop as any,
       onRequestImportables,
     };
-  }, [resolvedDependencies]);
+  }, [resolvedDependencies, onRequestImportables]);
 
   const debuggerContextValue = React.useMemo<DebuggerContextData>(
     () => ({
-      onRequestHistory: props.historyPlayer.requestHistory,
-      // debuggerClient: ,
+      onRequestHistory: historyPlayer.requestHistory,
     }),
-    []
+    [historyPlayer.requestHistory]
   );
 
   if (Object.keys(resolvedDependencies).length === 0) {

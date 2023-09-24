@@ -15,7 +15,7 @@ export default function Document() {
           gtag('config', 'G-YFLY9DXCYH');
         `}
         </Script>
-        <Script>
+        <Script id="hotjar">
           {`
             (function(h,o,t,j,a,r){
                 h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};

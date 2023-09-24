@@ -14,9 +14,12 @@ export default function CodeEditor({ onChange, value }: CodeEditorProps) {
   const target = useRef(null);
   const [height] = useSize(target);
 
-  const _onChange = useCallback((value: string | undefined) => {
-    onChange(value ?? "");
-  }, []);
+  const _onChange = useCallback(
+    (value: string | undefined) => {
+      onChange(value ?? "");
+    },
+    [onChange]
+  );
 
   const monaco = useMonaco();
 
@@ -34,13 +37,6 @@ export default function CodeEditor({ onChange, value }: CodeEditorProps) {
   }, []);
 
   return (
-    // <div ref={target}>
-    //   {/* <CodeMirror
-    //     value={props.value}
-    //     height={`${height}px`}
-    //     extensions={[javascript({ typescript: true })]}
-    //     onChange={props.onChange}
-    //   /> */}
     <div className=" h-full">
       <Editor
         height="100%"
@@ -49,17 +45,7 @@ export default function CodeEditor({ onChange, value }: CodeEditorProps) {
         defaultValue={value}
         onChange={_onChange}
         options={options}
-        // onValidate={handleEditorValidation}
       />
-      //{" "}
-      {/* {"x"
-      //   .repeat(2)
-      //   .split("")
-      //   .map((_, idx) => (
-      //     <div className="m-10">{idx}</div>
-      //   ))} */}
     </div>
-
-    // </div>
   );
 }

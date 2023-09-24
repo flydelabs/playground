@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export function FlydeHeader() {
   return (
     <nav className="navbar navbar--fixed-top">
@@ -5,7 +7,7 @@ export function FlydeHeader() {
         <div className="navbar__items">
           <a className="navbar__brand" href="https://www.flyde.dev">
             <div className="navbar__logo">
-              <img
+              <Image
                 src="/flyde_icon.png"
                 alt="Flyde Logo"
                 className="themedImage_sJoq themedImage--light_QcnL"

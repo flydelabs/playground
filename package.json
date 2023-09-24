@@ -4,6 +4,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "lint": "next lint",
     "types": "npx --yes supabase gen types typescript --project-id rfvvslzvfkyaoyngcjti --schema public > types/supabase.ts",
     "bundle-types": "npm run bundle-types:core && npm run bundle-types:runtime",
     "bundle-types:core": "dts-bundle --name @flyde/core --main node_modules/@flyde/core/dist/index.d.ts --out ../../../../types/@flyde-core.d.ts",
@@ -42,6 +43,8 @@
     "@types/react": "18.2.12",
     "@types/react-dom": "18.2.5",
     "encoding": "^0.1.13",
+    "eslint": "8.50.0",
+    "eslint-config-next": "13.5.2",
     "raw-loader": "^4.0.2"
   }
 }
