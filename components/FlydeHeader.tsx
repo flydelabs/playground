@@ -8,6 +8,8 @@ export function FlydeHeader() {
           <a className="navbar__brand" href="https://www.flyde.dev">
             <div className="navbar__logo">
               <Image
+                width={64}
+                height={64}
                 src="/flyde_icon.png"
                 alt="Flyde Logo"
                 className="themedImage_sJoq themedImage--light_QcnL"

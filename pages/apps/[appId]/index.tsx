@@ -1,14 +1,10 @@
 import AppView from "@/components/AppView";
-import { FlydeHeader } from "@/components/FlydeHeader";
-import LoginButton from "@/components/LoginButton";
-import LogoutButton from "@/components/LogoutButton";
 import { SimpleUser, simplifiedUser } from "@/lib/user";
 import { PlaygroundApp } from "@/types/entities";
 import { Database } from "@/types/supabase";
 import { createPagesServerClient } from "@supabase/auth-helpers-nextjs";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import Link from "next/link";
-import { useRouter } from "next/router";
 
 export const getServerSideProps: GetServerSideProps<{
   app: PlaygroundApp | null;
@@ -65,8 +61,6 @@ export default function Page({
   user,
   baseDomain,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const router = useRouter();
-
   if (app) {
     return <AppView app={app} user={user} baseDomain={baseDomain} />;
   } else {
