@@ -52,7 +52,7 @@ export default function NewFileButton({ onCreateFile }: NewFileButtonProps) {
   );
 
   return (
-    <div className="relative inline-block text-left">
+    <div className="relative inline-block text-left mx-5">
       <Popover
         isOpen={isMenuOpen}
         positions={["top", "bottom", "left", "right"]} // preferred positions by priority

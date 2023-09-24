@@ -15,9 +15,9 @@ export interface Database {
           creator_id: string | null
           creator_name: string | null
           files: Json
-          forked_from: number | null
+          forked_from: string | null
+          forks_count: number
           id: string
-          indexContent: string | null
           last_updated_date: string
           title: string
           view_count: number
@@ -27,9 +27,9 @@ export interface Database {
           creator_id?: string | null
           creator_name?: string | null
           files: Json
-          forked_from?: number | null
+          forked_from?: string | null
+          forks_count?: number
           id?: string
-          indexContent?: string | null
           last_updated_date?: string
           title: string
           view_count?: number
@@ -39,9 +39,9 @@ export interface Database {
           creator_id?: string | null
           creator_name?: string | null
           files?: Json
-          forked_from?: number | null
+          forked_from?: string | null
+          forks_count?: number
           id?: string
-          indexContent?: string | null
           last_updated_date?: string
           title?: string
           view_count?: number
@@ -60,7 +60,23 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      fork_app: {
+        Args: {
+          parent_app_id: string
+        }
+        Returns: {
+          creation_date: string
+          creator_id: string | null
+          creator_name: string | null
+          files: Json
+          forked_from: string | null
+          forks_count: number
+          id: string
+          last_updated_date: string
+          title: string
+          view_count: number
+        }
+      }
     }
     Enums: {
       [_ in never]: never

@@ -144,20 +144,16 @@ export default function AppView(props: AppViewProps) {
   }, [draftAppData, savedAppData]);
 
   async function fork() {
-    const newApp = await supabase
-      .from("apps")
-      .insert({
-        files: savedAppData.files as any,
-        title: "Forked from " + savedAppData.title,
-      })
-      .select();
+    const { data: newApp, error } = await supabase.rpc("fork_app", {
+      parent_app_id: app.id,
+    });
 
-    if (newApp.data && newApp.data.length === 1) {
-      router.push(`/apps/${newApp.data[0].id}`);
+    if (error) {
+      toast("Error: " + error.message);
     } else {
-      throw new Error("Fork app did not return a new app id");
+      toast("App forked!");
+      router.push(`/apps/${newApp.id}`);
     }
-    toast("App forked!");
   }
 
   async function save() {
@@ -347,6 +343,7 @@ export default function AppView(props: AppViewProps) {
               setDraftAppData((prev) => ({ ...prev, title: e.target.value }))
             }
             placeholder="App's title goes here"
+            maxLength={100}
             className="bg-transparent text-foreground .hover:border-b-foreground hover:border-b transition-color duration-50 flex-1 max-w-lg mr-auto ml-5"
           />
           <div>
@@ -408,9 +405,15 @@ export default function AppView(props: AppViewProps) {
           </div>
         </div>
       </header>
-      <main className="w-full flex flex-row flex-grow h-full overflow-y-auto">
-        <div className="flex flex-col w-full border-r border-r-foreground/10 flex-grow">
-          <header className="w-full border-b border-b-foreground/10 flex flex-row items-center">
+      <main className="flex flex-row  w-full h-full overflow-hidden">
+        <div
+          className="flex flex-col border-r border-r-foreground/10 flex-grow"
+          style={{ width: `calc(100% - ${outputWidth}px)` }}
+        >
+          <header
+            className="w-full border-b border-b-foreground/10 flex flex-row items-center overflow-x-auto scroll-b"
+            style={{ scrollbarWidth: "thin" }}
+          >
             <Tabs
               files={draftAppData.files}
               unsavedFiles={unsavedFiles}
@@ -454,10 +457,7 @@ export default function AppView(props: AppViewProps) {
           maxConstraints={[2000, 0]}
           handle={resizeHandle}
         >
-          <div
-            className="flex flex-col flex-grow-0 flex-shrink-0 overflow-hidden"
-            style={{ width: outputWidth }}
-          >
+          <div className="flex flex-col" style={{ width: outputWidth }}>
             <header className="w-full border-b-foreground/10 flex gap-3 flex-row items-center py-3 px-4 border-b">
               Events{" "}
               <div className="flex items-center">

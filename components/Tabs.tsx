@@ -89,7 +89,7 @@ export default function Tabs({
 
   return (
     <div className="text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-700">
-      <ul className="flex -mb-px px-5 mt-1 flex-nowrap">
+      <ul className="flex -mb-px  mt-1 flex-nowrap">
         {files.map((file) =>
           fileEquals(file, activeFile) ? (
             <li
