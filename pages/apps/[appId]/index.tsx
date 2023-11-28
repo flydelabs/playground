@@ -1,9 +1,12 @@
 import AppView from "@/components/AppView";
+import { FullPageLoader } from "@/components/FullPageLoader";
 import { SimpleUser, simplifiedUser } from "@/lib/user";
 import { PlaygroundApp } from "@/types/entities";
 import { Database } from "@/types/supabase";
+import { Loader } from "@flyde/flow-editor";
 import { createPagesServerClient } from "@supabase/auth-helpers-nextjs";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 
 export const getServerSideProps: GetServerSideProps<{
@@ -15,46 +18,38 @@ export const getServerSideProps: GetServerSideProps<{
 
   const appId = context.params?.appId as string;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [appResult, userResult] = await Promise.allSettled([
+    supabase.from("apps").select("*").eq("id", appId).single(),
+    supabase.auth.getUser(),
+  ]);
 
-  try {
-    const res = await supabase
-      .from("apps")
-      .select("*")
-      .eq("id", appId)
-      .single();
-
-    if (res.error) {
-      throw res.error.message;
-    }
-
-    if (!res.data) {
-      throw new Error("App not found");
-    }
-
-    const baseDomain = `https://${
-      context.req.headers.host ?? "play.flyde.dev"
-    }`;
-
-    return {
-      props: {
-        app: res.data as PlaygroundApp,
-        user: user ? simplifiedUser(user) : null,
-        baseDomain,
-      },
-    };
-  } catch (e) {
-    return {
-      props: {
-        app: null,
-        user: user ? simplifiedUser(user) : null,
-        baseDomain: `https://${context.req.headers.host ?? "play.flyde.dev"}`,
-      },
-    };
+  if (appResult.status === "rejected" || !appResult.value.data) {
+    throw new Error(`App not found`);
   }
+
+  const user =
+    userResult.status === "fulfilled" ? userResult.value.data.user : null;
+
+  const app = appResult.value.data;
+
+  const baseDomain = `https://${context.req.headers.host ?? "play.flyde.dev"}`;
+
+  return {
+    props: {
+      app: app as PlaygroundApp,
+      user: user ? simplifiedUser(user) : null,
+      baseDomain,
+    },
+  };
 };
+
+const DynamicAppView = dynamic(
+  () => import("@/components/AppView").then((m) => m.default),
+  {
+    loading: () => <FullPageLoader />,
+    ssr: false,
+  }
+);
 
 export default function Page({
   app,
@@ -62,7 +57,7 @@ export default function Page({
   baseDomain,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   if (app) {
-    return <AppView app={app} user={user} baseDomain={baseDomain} />;
+    return <DynamicAppView app={app} user={user} baseDomain={baseDomain} />;
   } else {
     return (
       <div className="flex flex-col nunito text-center my-10">

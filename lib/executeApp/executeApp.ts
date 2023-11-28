@@ -5,17 +5,26 @@ import {
   simplifiedExecute,
   Debugger,
   isBaseNode,
+  DynamicNodeInput,
+  NodeInputs,
 } from "@flyde/core";
 
 import * as stdlib from "@flyde/stdlib/dist/all-browser";
 import { transpileFile } from "../transpileFile/transpileFile";
+import React from "react";
+import ReactDOM from "react-dom";
+import { RuntimeControls } from "@/components/RuntimeControls";
 
 function ensureFakeModulesOnWindow(
   app: AppData,
   deps: ResolvedDependencies,
-  _debugger: Debugger
+  _debugger: Debugger,
+  handle: PlaygroundHandle
 ) {
   const windowAny = window as any;
+
+  windowAny.React = windowAny.React || React;
+  windowAny.ReactDOM = windowAny.ReactDOM || ReactDOM;
 
   const fakeRuntime = {
     loadFlow: (path: string) => {
@@ -29,16 +38,14 @@ function ensureFakeModulesOnWindow(
 
       const flow = JSON.parse(maybeFile.content);
 
+      const onStatusChange: (status: RuntimeStatus) => void =
+        windowAny.__onStatusChange;
+
       return (inputs: any, params: any = {}) => {
         const { onOutputs, ...otherParams } = params;
 
-        let destroy;
+        let destroy: ReturnType<typeof simplifiedExecute>;
         const promise: any = new Promise(async (res, rej) => {
-          // const _debugger =
-          //   otherParams._debugger ||
-          //   (await createDebugger(debuggerUrl, fullFlowPath));
-
-          // debugLogger("Using debugger %o", _debugger);
           const fixedStdlib = Object.entries(stdlib).reduce(
             (acc, [key, val]) => {
               if (isBaseNode(val)) {
@@ -50,28 +57,32 @@ function ensureFakeModulesOnWindow(
             },
             {} as any
           );
+          onStatusChange({ type: "running" });
           destroy = await simplifiedExecute(
             flow.node,
             { ...fixedStdlib, ...deps } as any,
-            inputs ?? {},
+            inputs ?? handle.inputs,
             onOutputs,
             {
               _debugger,
               onCompleted: (data) => {
                 void (async function () {
-                  // if (_debugger && _debugger.destroy) {
-                  //   await _debugger.destroy();
-                  // }
+                  onStatusChange({ type: "stopped" });
                   res(data);
                 })();
               },
               onBubbleError: (err) => {
-                console.error("Error in flow", err);
-                rej(err);
+                onStatusChange({ type: "error", error: err });
+                // rej(err);
               },
               ...otherParams,
             }
           );
+
+          windowAny.__destroyExecution = function () {
+            destroy();
+            onStatusChange({ type: "stopped" });
+          };
         }) as any;
         return { result: promise, destroy };
       };
@@ -83,12 +94,65 @@ function ensureFakeModulesOnWindow(
   };
 }
 
-export function executeApp(
-  app: AppData,
-  deps: ResolvedDependencies,
-  _debugger: Debugger
-) {
-  ensureFakeModulesOnWindow(app, deps, _debugger);
+export function destroyExecution() {
+  const windowAny = window as any;
+  if (!windowAny.__destroyExecution) {
+    throw new Error("No execution to destroy");
+  }
+  windowAny.__destroyExecution();
+}
+
+export interface PlaygroundHandle {
+  setMode: (mode: "string" | "jsx") => void;
+  addOutput: (key: string, output: any) => void;
+  inputs: Record<string, DynamicNodeInput>;
+}
+
+export type RuntimeStatus =
+  | RuntimeStatusStopped
+  | RuntimeStatusRunning
+  | RuntimeStatusError;
+
+export interface RuntimeStatusStopped {
+  type: "stopped";
+}
+
+export interface RuntimeStatusRunning {
+  type: "running";
+}
+
+export interface RuntimeStatusError {
+  type: "error";
+  error: any;
+}
+
+export interface ExecuteAppParams {
+  app: AppData;
+  deps: ResolvedDependencies;
+  _debugger: Debugger;
+  playgroundHandle: PlaygroundHandle;
+  debugDelay: number;
+  onStatusChange: (status: RuntimeStatus) => void;
+}
+
+export function executeApp({
+  app,
+  _debugger,
+  deps,
+  playgroundHandle: outputHandle,
+  debugDelay,
+  onStatusChange,
+}: ExecuteAppParams) {
+  (window as any).__onStatusChange = onStatusChange;
+
+  if (debugDelay) {
+    _debugger.debugDelay = debugDelay;
+  } else {
+    _debugger.debugDelay = undefined;
+  }
+  ensureFakeModulesOnWindow(app, deps, _debugger, outputHandle);
+
+  (window as any).FlydePlayground = outputHandle;
 
   const entry = app.files.find((file) => file.type === AppFileType.ENTRY_POINT);
 

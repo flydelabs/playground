@@ -1,26 +1,10 @@
 import { DebuggerEvent, DebuggerEventType } from "@flyde/core";
 import React, { useMemo } from "react";
+import { Timestamp } from "../Utils/Timestamp";
 
 export interface EventsViewerProps {
   events: DebuggerEvent[];
   showAllEvents: boolean;
-}
-
-function padZero(num: number, length: number) {
-  return num.toString().padStart(length, "0");
-}
-
-const padZero2 = (num: number) => padZero(num, 2);
-const padZero3 = (num: number) => padZero(num, 3);
-
-function Timestamp({ timestamp }: { timestamp: number }) {
-  const date = new Date(timestamp);
-  // format date into HH:MM:SS.mmm
-  const timeString = `${padZero2(date.getHours())}:${padZero2(
-    date.getMinutes()
-  )}:${padZero2(date.getSeconds())}.${padZero3(date.getMilliseconds())}`;
-
-  return <div className="text-2xs text-slate-300 py-1">{timeString}</div>;
 }
 
 function EventTypeTag({ eventType }: { eventType: DebuggerEventType }) {
@@ -170,19 +154,19 @@ export function EventsViewer(props: EventsViewerProps) {
   }, [props.events, props.showAllEvents]);
   if (props.events.length === 0) {
     return (
-      <div className="text-slate-400 py-8 px-8">
+      <div className="text-slate-200 py-8 px-8">
         Events from Flyde&apos;s debugger will appear here once you run the app.
       </div>
     );
   } else if (filtered.length === 0) {
     return (
-      <div className="text-slate-400 py-8 px-8">
+      <div className="text-slate-200 py-8 px-8">
         No events found that match the selected filters
       </div>
     );
   } else {
     return (
-      <div className="border-b text-slate-100 py-2">
+      <div className="border-b text-slate-100 py-2  bg-slate-800  flex-1 ">
         {filtered.map((event, i) => (
           <EventItem key={i} event={event} />
         ))}

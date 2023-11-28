@@ -53,8 +53,9 @@ export const createHistoryPlayer = (): HistoryPlayer => {
       }
     },
     addEvents: (events) => {
-      events.forEach((event) => {
-        // hack for easily logging errors to error pin
+      events.forEach((_event) => {
+        // copy for the hack below not to mutate the original event
+        const event = { ..._event };
         if (event.type === DebuggerEventType.ERROR) {
           const ev: PinDebuggerEvent<DebuggerEventType.OUTPUT_CHANGE> =
             event as any;

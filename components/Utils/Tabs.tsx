@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
-import { AppFile, AppFileType } from "./AppView";
+import { AppFile, AppFileType } from "../AppView";
 import { toFilename } from "@/lib/toFilename";
-import { InfoTooltip } from "./InfoToolip";
+import { InfoTooltip } from "../InfoToolip";
 
 export interface TabsProps {
   files: AppFile[];
@@ -18,8 +18,8 @@ function fileId(file: AppFile) {
   return `${file.name}.${file.type}`;
 }
 
-export function fileEquals(file1: AppFile, file2: AppFile) {
-  return fileId(file1) === fileId(file2);
+export function fileEquals(file1?: AppFile, file2?: AppFile) {
+  return (file1 && fileId(file1)) === (file2 && fileId(file2));
 }
 
 export default function Tabs({
@@ -94,9 +94,9 @@ export default function Tabs({
           fileEquals(file, activeFile) ? (
             <li
               key={file.name + file.type}
-              className="flex-none flex flex-row px-3 py-2 border-b-2 border-blue-600"
+              className="flex-none flex flex-row px-3 pt-2 border-b-2 border-blue-600"
             >
-              {editedFile === file ? (
+              {fileEquals(file, editedFile) ? (
                 <React.Fragment>
                   <input
                     className="inline-block  text-blue-600  rounded-t-lg active dark:text-blue-500 dark:border-blue-500 w-full"

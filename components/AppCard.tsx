@@ -1,7 +1,7 @@
 import { PlaygroundApp } from "@/types/entities";
 import { AppFileType } from "./AppView";
 import Link from "next/link";
-import { TimeAgo } from "./TimeAgo";
+import { TimeAgo } from "./Utils/TimeAgo";
 
 export function AppCard({ app }: { app: PlaygroundApp }) {
   const updated = new Date(app.last_updated_date);
@@ -9,7 +9,7 @@ export function AppCard({ app }: { app: PlaygroundApp }) {
   return (
     <div className="flex flex-col justify-between w-96 h-36 py-5 px-10 border-slate-200 border bg-white rounded-xl shadow-lg m-4 hover:bg-gray-100 cursor-pointer">
       <header>
-        <Link href={`/apps/${app.id}`} className="!no-underline">
+        <Link href={`/apps/${app.id}`} className="!no-underline text-blue-500">
           <h1 className="text-l font-bold">{app.title}</h1>
         </Link>
       </header>

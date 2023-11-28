@@ -1,6 +1,5 @@
 import { timeAgo } from "@/lib/timeAgo";
 import React from "react";
-import { Tooltip } from "react-tooltip";
 
 export function TimeAgo({ date }: { date: Date }) {
   return (

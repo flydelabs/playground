@@ -1,5 +1,5 @@
 import { RuntimePlayer } from "@flyde/flow-editor";
-import { Debugger, DebuggerEvent } from "@flyde/core";
+import { Debugger, DebuggerEvent, DebuggerEventType } from "@flyde/core";
 import { HistoryPlayer } from "./createHistoryPlayer";
 import { EditorDebuggerClient } from "@flyde/remote-debugger";
 
@@ -12,6 +12,9 @@ export const createRuntimeClientDebugger = (
 
   return {
     onEvent: (e) => {
+      if (e.type === DebuggerEventType.ERROR) {
+        console.log("onEvent", e);
+      }
       const fullEvent = {
         ...e,
         time: Date.now(),
