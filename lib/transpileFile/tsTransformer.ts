@@ -96,7 +96,13 @@ export function importToGlobalTransformer(): ts.TransformerFactory<ts.SourceFile
           );
         }
       }
-      return ts.visitEachChild(node, visit, context);
+
+      try {
+        return ts.visitEachChild(node, visit, context);
+      } catch (e) {
+        console.warn(`[importToGlobalTransformer] Error`, e);
+        return node;
+      }
     };
     return (node: ts.SourceFile) => ts.visitNode(node, visit) as ts.SourceFile;
   };

@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import CodeEditor from "./CodeEditor";
 import SaveIcon from "./Icons/SaveIcon";
 import DownloadIcon from "./Icons/DownloadIcon";
 import ForkIcon from "./Icons/ForkIcon";
 import ShareIcon from "./Icons/ShareIcon";
-import Tabs, { fileEquals } from "./Tabs";
+import Tabs, { fileEquals } from "./Utils/Tabs";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 import { Database } from "../types/supabase";
@@ -20,21 +20,30 @@ import NewFileButton from "./NewFileButton";
 import { EmbeddedFlydeFileWrapper } from "./EmbeddedFlyde";
 
 import { getDefaultContent } from "@/lib/defaultContent";
-import { executeApp } from "@/lib/executeApp/executeApp";
+import {
+  PlaygroundHandle,
+  RuntimeStatus,
+  destroyExecution,
+  executeApp,
+} from "@/lib/executeApp/executeApp";
 import { Ok, safeParse } from "@/lib/safeParse";
 
 import {
   DebuggerEvent,
+  DynamicNodeInput,
   FlydeFlow,
   Node,
+  NodeInputs,
   ResolvedDependencies,
+  dynamicNodeInput,
+  noop,
 } from "@flyde/core";
 import { transpileCodeNodes } from "@/lib/transpileCodeFlow";
 import { createHistoryPlayer } from "@/lib/executeApp/createHistoryPlayer";
 import { createRuntimePlayer, useLocalStorage } from "@flyde/flow-editor";
 import { createRuntimeClientDebugger } from "@/lib/executeApp/createRuntimePlayerDebugger";
 import { Resizable } from "react-resizable";
-import { EventsViewer } from "./EventsViewer";
+import { EventsViewer } from "./SidePanes/EventsViewer";
 import { HomeIcon } from "./Icons/HomeIcon";
 import Link from "next/link";
 import { toast } from "@/lib/toast";
@@ -43,6 +52,16 @@ import { downloadApp } from "@/lib/downloadApp";
 import { IconBtn } from "./IconBtn";
 import { InfoTooltip } from "./InfoToolip";
 import { Tooltip } from "react-tooltip";
+import { EventsLog } from "./SidePanes/EventsLog";
+import { SidePane } from "./SidePanes/SidePane";
+import {
+  OutputEvent,
+  OutputViewerString,
+} from "./SidePanes/OutputViewerString";
+import { InputsPane } from "./SidePanes/InputsPane";
+import { OutputViewerJsx } from "./SidePanes/OutputViewerJsx";
+import { RuntimeControls } from "./RuntimeControls";
+import TrashIcon from "./Icons/TrashIcon";
 
 export enum AppFileType {
   VISUAL_FLOW = "flyde",
@@ -73,8 +92,7 @@ function getFileToShow(app: PlaygroundApp): AppFile {
   const firstVisualFile = app.files.find(
     (file) => file.type === AppFileType.VISUAL_FLOW
   );
-  // return firstVisualFile ?? app.files[0];
-  return app.files[0];
+  return firstVisualFile ?? app.files[0];
 }
 
 export default function AppView(props: AppViewProps) {
@@ -106,11 +124,63 @@ export default function AppView(props: AppViewProps) {
 
   const [events, setEvents] = React.useState<DebuggerEvent[]>([]);
 
-  const [showAllEvents, setShowAllEvents] = React.useState(false);
+  const [outputMode, setOutputMode] = React.useState<"jsx" | "string">(
+    "string"
+  );
+
+  const [runtimeStatus, setRuntimeStatus] = React.useState<RuntimeStatus>({
+    type: "stopped",
+  });
+
+  const [runtimeDelay, setRuntimeDelay] = useState(300);
 
   useEffect(() => {
     runtimePlayer.start();
   }, [runtimePlayer]);
+
+  const [outputs, setOutputs] = React.useState<OutputEvent[]>([]);
+
+  const mainFlydeFlow = useMemo(() => {
+    const mainFile = savedAppData.files.find(
+      (file) => file.type === AppFileType.ENTRY_POINT
+    );
+    const mainFlydeFile = mainFile?.content.match(/['"](.*)\.flyde['"]/)?.[1];
+
+    const file = savedAppData.files.find(
+      (file) =>
+        file.name === mainFlydeFile && file.type === AppFileType.VISUAL_FLOW
+    );
+
+    try {
+      const parsed = safeParse<FlydeFlow>(file?.content ?? "");
+      if (parsed.type === "ok") {
+        return parsed.data;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }, [savedAppData.files]);
+
+  const outputHandle = useMemo<PlaygroundHandle>(() => {
+    const inputs = mainFlydeFlow
+      ? Object.keys(mainFlydeFlow.node.inputs).reduce<
+          Record<string, DynamicNodeInput>
+        >((acc, key) => {
+          acc[key] = dynamicNodeInput();
+          return acc;
+        }, {})
+      : {};
+    return {
+      setMode: (mode) => setOutputMode(mode),
+      addOutput: (key, value) => {
+        setOutputs((prev) =>
+          [{ timestamp: Date.now(), value, key }].concat(prev)
+        );
+      },
+      inputs,
+    };
+  }, [mainFlydeFlow]);
 
   const _debugger = React.useMemo(() => {
     return createRuntimeClientDebugger(runtimePlayer, historyPlayer);
@@ -153,6 +223,7 @@ export default function AppView(props: AppViewProps) {
     } else {
       toast("App forked!");
       router.push(`/apps/${newApp.id}`);
+      location.reload();
     }
   }
 
@@ -189,6 +260,14 @@ export default function AppView(props: AppViewProps) {
     window.open(shareUrl, "Twitter / X", windowOptions);
   }
 
+  const deleteApp = useCallback(async () => {
+    if (confirm("Are you sure you want to delete this app?")) {
+      await supabase.from("apps").delete().eq("id", app.id);
+      toast("App deleted");
+      router.push("/");
+    }
+  }, [app.id, router, supabase]);
+
   const changeActiveFileContent = useCallback(
     (content: string) => {
       setDraftAppData((prev) => ({
@@ -197,6 +276,8 @@ export default function AppView(props: AppViewProps) {
           fileEquals(file, activeFile) ? { ...file, content } : file
         ),
       }));
+
+      setActiveFile((prev) => ({ ...prev, content }));
     },
     [activeFile]
   );
@@ -289,6 +370,32 @@ export default function AppView(props: AppViewProps) {
 
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
 
+  const startExecution = useCallback(() => {
+    runtimePlayer.start();
+    executeApp({
+      app: draftAppData,
+      deps: localNodes as any,
+      _debugger,
+      playgroundHandle: outputHandle,
+      onStatusChange: setRuntimeStatus,
+      debugDelay: runtimeDelay,
+    });
+  }, [
+    runtimePlayer,
+    draftAppData,
+    localNodes,
+    _debugger,
+    outputHandle,
+    runtimeDelay,
+  ]);
+
+  const stopExecution = useCallback(() => {
+    destroyExecution();
+    runtimePlayer.clear();
+    runtimePlayer.stop();
+    // setRuntimeStatus({ type: "stopped" });
+  }, [runtimePlayer]);
+
   const popoverMenu = (
     <div
       className="absolute left-0 z-100 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
@@ -322,10 +429,11 @@ export default function AppView(props: AppViewProps) {
   );
 
   const title = `${savedAppData.title} | Flyde Playground`;
+
   // <div className="w-full h-full flex flex-col items-center flex-1">
   return (
     <div className="app-view-container h-full flex flex-col w-full">
-      <header className="w-full flex flex-col  h-16 border-b-foreground/10 border-b bg-gray-200">
+      <header className="w-full flex flex-col border-b-foreground/10 border-b bg-gray-200">
         <div className="w-full  flex flex-row p-3 text-foreground pl-8 pr-8">
           <div className="flex flex-row items-center">
             <Link
@@ -346,17 +454,22 @@ export default function AppView(props: AppViewProps) {
             maxLength={100}
             className="bg-transparent text-foreground .hover:border-b-foreground hover:border-b transition-color duration-50 flex-1 max-w-lg mr-auto ml-5"
           />
-          <div>
-            <button
-              className="py-2 px-4 rounded-md no-underline bg-blue-200 hover:bg-blue-300 mx-4"
-              onClick={() =>
-                executeApp(draftAppData, localNodes as any, _debugger)
-              }
-            >
-              Run
-            </button>
-          </div>
+
           <div className="flex flex-row gap-4 items-center">
+            <IconBtn
+              onClick={() => save()}
+              disabled={!user}
+              tooltip="Save app"
+              disabledTooltip="You need to be logged in to save"
+              svgIcon={<SaveIcon />}
+            />
+            <IconBtn
+              onClick={fork}
+              tooltip="Fork app"
+              disabledTooltip="You need to be logged in to fork"
+              disabled={!user}
+              svgIcon={<ForkIcon />}
+            />
             <IconBtn
               onClick={shareOnX}
               tooltip="Share on X"
@@ -367,20 +480,12 @@ export default function AppView(props: AppViewProps) {
               tooltip="Download app"
               svgIcon={<DownloadIcon />}
             />
-
             <IconBtn
-              onClick={fork}
-              tooltip="Fork app"
-              disabledTooltip="You need to be logged in to fork"
-              disabled={!user}
-              svgIcon={<ForkIcon />}
-            />
-            <IconBtn
-              onClick={() => save()}
-              disabled={!user}
-              tooltip="Save app"
-              disabledTooltip="You need to be logged in to save"
-              svgIcon={<SaveIcon />}
+              onClick={deleteApp}
+              tooltip="Delete app"
+              disabled={user?.id !== app.creator_id}
+              disabledTooltip="You can only delete apps you created"
+              svgIcon={<TrashIcon />}
             />
 
             {user ? (
@@ -405,6 +510,7 @@ export default function AppView(props: AppViewProps) {
           </div>
         </div>
       </header>
+
       <main className="flex flex-row  w-full h-full overflow-hidden">
         <div
           className="flex flex-col border-r border-r-foreground/10 flex-grow"
@@ -419,9 +525,10 @@ export default function AppView(props: AppViewProps) {
               unsavedFiles={unsavedFiles}
               activeFile={activeFile}
               onDeleteFile={onDeleteFile}
-              onChangeActiveFile={(newActiveFile) =>
-                setActiveFile(newActiveFile)
-              }
+              onChangeActiveFile={(newActiveFile) => {
+                setActiveFile(newActiveFile);
+                setEditedFileTab(undefined);
+              }}
               onRenameFile={onRenameFile}
               onSetEditedFile={(file) => setEditedFileTab(file)}
               editedFile={editedFileTab}
@@ -440,6 +547,7 @@ export default function AppView(props: AppViewProps) {
               />
             ) : (
               <CodeEditor
+                key={activeFile.name}
                 value={activeFile.content}
                 onChange={changeActiveFileContent}
               />
@@ -453,48 +561,39 @@ export default function AppView(props: AppViewProps) {
           onResize={(_m, { size: { width } }) => setOutputWidth(width)}
           axis="x"
           resizeHandles={["w"]}
-          minConstraints={[100, 0]}
+          minConstraints={[450, 0]}
           maxConstraints={[2000, 0]}
           handle={resizeHandle}
         >
           <div className="flex flex-col" style={{ width: outputWidth }}>
-            <header className="w-full border-b-foreground/10 flex gap-3 flex-row items-center py-3 px-4 border-b">
-              Events{" "}
-              <div className="flex items-center">
-                <input
-                  id="default-checkbox"
-                  type="checkbox"
-                  checked={showAllEvents}
-                  onChange={(e) => setShowAllEvents(e.target.checked)}
-                />
-                <label
-                  htmlFor="default-checkbox"
-                  className="ml-1 text-xs font-medium text-gray-900 dark:text-gray-300"
-                >
-                  Include lifecycle events{" "}
-                  <InfoTooltip content="By default, only new input, output and error events are shown. Select this to view processing state change events, and input queue size change events" />
-                </label>
-              </div>
-              <button
-                onClick={() => setEvents([])}
-                className="justify-end justify-items-end content-end ml-auto text-sm"
-              >
-                Clear
-              </button>
-            </header>
-            <div className="flex  bg-slate-800 text-slate-100  overflow-y-auto h-full">
-              <EventsViewer events={events} showAllEvents={showAllEvents} />
-            </div>
+            <RuntimeControls
+              delay={runtimeDelay}
+              onDelayChange={setRuntimeDelay}
+              run={startExecution}
+              stop={stopExecution}
+              status={runtimeStatus}
+            />
+            <InputsPane
+              flow={mainFlydeFlow}
+              inputs={outputHandle.inputs}
+              status={runtimeStatus}
+            />
+            {outputMode === "string" ? (
+              <OutputViewerString
+                events={outputs}
+                clearEvents={() => setOutputs([])}
+              />
+            ) : (
+              <OutputViewerJsx events={outputs} />
+            )}
+
+            <EventsLog events={events} clearEvents={() => setEvents([])} />
           </div>
         </Resizable>
       </main>
       <Head>
         <title>{title}</title>
-        <meta
-          property="og:title"
-          content={`${savedAppData.title} | Flyde Playground`}
-          key="title"
-        />
+        <meta property="og:title" content={title} key="title" />
       </Head>
     </div>
   );

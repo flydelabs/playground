@@ -7,6 +7,8 @@ import { Database } from "@/types/supabase";
 import { AppFileType } from "@/components/AppView";
 import Link from "next/link";
 import { AppCard } from "@/components/AppCard";
+import Head from "next/head";
+import { SimpleUser } from "@/lib/user";
 // import EmbeddedFlyde from "./EmbeddedFlyde";
 
 export const getServerSideProps: GetServerSideProps<{
@@ -55,6 +57,10 @@ export default function Home({
           <AppCard app={app} key={app.id} />
         ))}
       </div>
+      <Head>
+        <title>Flyde Playground</title>
+        <meta property="og:title" content="Flyde Playground" key="title" />
+      </Head>
     </main>
   );
 }

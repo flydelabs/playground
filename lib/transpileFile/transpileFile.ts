@@ -1,6 +1,7 @@
 import ts from "typescript";
 import { exportToGlobalTransformer } from "./exportsTransformer";
 import { importToGlobalTransformer } from "./tsTransformer";
+import { stripTypesTransformer } from "./stripTypesTransformer";
 
 export function transpileFile(fileName: string, content: string) {
   const transpileOutput = ts.transpileModule(content, {
@@ -10,8 +11,9 @@ export function transpileFile(fileName: string, content: string) {
     },
     transformers: {
       before: [
-        exportToGlobalTransformer(fileName),
         importToGlobalTransformer(),
+        stripTypesTransformer(),
+        exportToGlobalTransformer(fileName),
       ],
     },
   });

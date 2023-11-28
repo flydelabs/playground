@@ -76,11 +76,24 @@ export interface EmbeddedFlydeFileWrapperProps {
   historyPlayer: HistoryPlayer;
 }
 
+function debounce<T extends (...args: any[]) => any>(fn: T, wait: number): T {
+  let timeout: any;
+  return function (this: any, ...args: any[]) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn.apply(this, args), wait);
+  } as any;
+}
+
 export function EmbeddedFlydeFileWrapper(props: EmbeddedFlydeFileWrapperProps) {
   const { content, onFileChange, localNodes, historyPlayer } = props;
   const [flow, setFlow] = useState<FlydeFlow>();
 
   const [error, setError] = useState<Error>();
+
+  const [textMode, setTextMode] = useState(
+    (typeof window !== "undefined" ? (window as any) : ({} as any))
+      .__textMode === true
+  );
 
   useEffect(() => {
     const parsed = safeParse<FlydeFlow>(content);
@@ -92,23 +105,33 @@ export function EmbeddedFlydeFileWrapper(props: EmbeddedFlydeFileWrapperProps) {
     }
   }, [content]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const onChange = useCallback(
-    (flow: FlydeFlow) => {
+    debounce((flow: FlydeFlow) => {
       onFileChange(JSON.stringify(flow, null, 2));
-    },
+    }, 300),
     [onFileChange]
   );
 
   if (flow) {
-    return (
-      <EmbeddedFlyde
-        key={props.fileName}
-        flow={flow}
-        onChange={onChange}
-        localNodes={localNodes}
-        historyPlayer={historyPlayer}
-      />
-    );
+    if (textMode) {
+      return (
+        <textarea
+          value={content}
+          onChange={(e) => onFileChange(e.target.value)}
+        />
+      );
+    } else {
+      return (
+        <EmbeddedFlyde
+          key={props.fileName}
+          flow={flow}
+          onChange={onChange}
+          localNodes={localNodes}
+          historyPlayer={historyPlayer}
+        />
+      );
+    }
   } else if (error) {
     return <p>Error parsing Flyde: {error?.message}</p>;
   } else {
@@ -116,7 +139,7 @@ export function EmbeddedFlydeFileWrapper(props: EmbeddedFlydeFileWrapperProps) {
   }
 }
 
-export default function EmbeddedFlyde(props: EmbeddedFlydeProps) {
+export function EmbeddedFlyde(props: EmbeddedFlydeProps) {
   const { flow, localNodes, onChange, historyPlayer } = props;
   const [state, setState] = useState<FlowEditorState>({
     ...defaultState,

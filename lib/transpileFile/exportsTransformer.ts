@@ -50,7 +50,13 @@ export function exportToGlobalTransformer(
           );
         });
       }
-      return ts.visitEachChild(node, visit, context);
+
+      try {
+        return ts.visitEachChild(node, visit, context);
+      } catch (e) {
+        console.error("[exportToGlobalTransformer] Error", e);
+        return node;
+      }
     };
     return (node: ts.SourceFile) => ts.visitNode(node, visit) as ts.SourceFile;
   };
