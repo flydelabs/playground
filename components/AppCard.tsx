@@ -11,6 +11,7 @@ export function AppCard({ app }: { app: PlaygroundApp }) {
   const onUserClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
       e.preventDefault();
+      e.stopPropagation();
       router.push(`/users/${app.creator_id}`);
     },
     [router, app]

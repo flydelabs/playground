@@ -59,7 +59,7 @@ export default function Home({
           ))}
         </div>
         <Head>
-          <title>@{userName}'s Apps | Flyde Playground</title>
+          <title>@{userName}&apos;s Apps | Flyde Playground</title>
           <meta property="og:title" content="Flyde Playground" key="title" />
         </Head>
       </main>
