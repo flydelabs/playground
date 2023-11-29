@@ -1,14 +1,10 @@
-import Image from "next/image";
 import { Nunito } from "next/font/google";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next/types";
 import { PlaygroundApp } from "@/types/entities";
 import { createPagesServerClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
-import { AppFileType } from "@/components/AppView";
-import Link from "next/link";
 import { AppCard } from "@/components/AppCard";
 import Head from "next/head";
-import { SimpleUser } from "@/lib/user";
 // import EmbeddedFlyde from "./EmbeddedFlyde";
 
 export const getServerSideProps: GetServerSideProps<{

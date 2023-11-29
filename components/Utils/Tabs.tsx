@@ -14,7 +14,7 @@ export interface TabsProps {
   editedFile?: AppFile;
 }
 
-function fileId(file: AppFile) {
+export function fileId(file: AppFile) {
   return `${file.name}.${file.type}`;
 }
 

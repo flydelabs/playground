@@ -131,8 +131,7 @@
   height: 60px;
   padding: 11px 20px;
   font-size: 16px;
-  /* flex: 1; */
-  width: 100%;
+
   line-height: 24px;
 }
 
@@ -149,4 +148,19 @@
 
 .react-tiny-popover-container {
   z-index: 1000;
+}
+
+.canvas-positioning-hack {
+  /* display: flex; */
+  width: 100%;
+  height: 100%;
+}
+
+.canvas-positioning-hack:not(.ready) .flyde-flow-editor {
+  opacity: 0;
+}
+
+.flyde-flow-editor .actions-menu .action-button:nth-child(3),
+.flyde-flow-editor .actions-menu .action-button:nth-child(4) {
+  display: none;
 }

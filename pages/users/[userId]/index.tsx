@@ -3,6 +3,7 @@ import { PlaygroundApp } from "@/types/entities";
 import { Database } from "@/types/supabase";
 import { createPagesServerClient } from "@supabase/auth-helpers-nextjs";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
+import Head from "next/head";
 import Link from "next/link";
 
 export const getServerSideProps: GetServerSideProps<{
@@ -57,6 +58,10 @@ export default function Home({
             <AppCard app={app} key={app.id} />
           ))}
         </div>
+        <Head>
+          <title>@{userName}'s Apps | Flyde Playground</title>
+          <meta property="og:title" content="Flyde Playground" key="title" />
+        </Head>
       </main>
     );
   }

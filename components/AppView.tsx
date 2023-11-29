@@ -6,18 +6,17 @@ import SaveIcon from "./Icons/SaveIcon";
 import DownloadIcon from "./Icons/DownloadIcon";
 import ForkIcon from "./Icons/ForkIcon";
 import ShareIcon from "./Icons/ShareIcon";
-import Tabs, { fileEquals } from "./Utils/Tabs";
+import Tabs, { fileEquals, fileId } from "./Utils/Tabs";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 import { Database } from "../types/supabase";
 import { PlaygroundApp } from "../types/entities";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { SimpleUser } from "@/lib/user";
-import LoginButton from "@/components/LoginButton";
 import Head from "next/head";
 import NewFileButton from "./NewFileButton";
-import { EmbeddedFlydeFileWrapper } from "./EmbeddedFlyde";
+import { EmbeddedFlydeFileWrapper } from "./EmbeddedFlyde/EmbeddedFlydeFileWrapper";
 
 import { getDefaultContent } from "@/lib/defaultContent";
 import {
@@ -33,27 +32,21 @@ import {
   DynamicNodeInput,
   FlydeFlow,
   Node,
-  NodeInputs,
   ResolvedDependencies,
   dynamicNodeInput,
-  noop,
 } from "@flyde/core";
 import { transpileCodeNodes } from "@/lib/transpileCodeFlow";
 import { createHistoryPlayer } from "@/lib/executeApp/createHistoryPlayer";
 import { createRuntimePlayer, useLocalStorage } from "@flyde/flow-editor";
 import { createRuntimeClientDebugger } from "@/lib/executeApp/createRuntimePlayerDebugger";
 import { Resizable } from "react-resizable";
-import { EventsViewer } from "./SidePanes/EventsViewer";
 import { HomeIcon } from "./Icons/HomeIcon";
 import Link from "next/link";
 import { toast } from "@/lib/toast";
-import { Popover } from "react-tiny-popover";
 import { downloadApp } from "@/lib/downloadApp";
 import { IconBtn } from "./IconBtn";
-import { InfoTooltip } from "./InfoToolip";
 import { Tooltip } from "react-tooltip";
 import { EventsLog } from "./SidePanes/EventsLog";
-import { SidePane } from "./SidePanes/SidePane";
 import {
   OutputEvent,
   OutputViewerString,
@@ -62,6 +55,7 @@ import { InputsPane } from "./SidePanes/InputsPane";
 import { OutputViewerJsx } from "./SidePanes/OutputViewerJsx";
 import { RuntimeControls } from "./RuntimeControls";
 import TrashIcon from "./Icons/TrashIcon";
+import { useUnsavedChangesWarning } from "@/lib/useUnsavedChangesWarning";
 
 export enum AppFileType {
   VISUAL_FLOW = "flyde",
@@ -95,6 +89,8 @@ function getFileToShow(app: PlaygroundApp): AppFile {
   return firstVisualFile ?? app.files[0];
 }
 
+const supabase = createClientComponentClient<Database>();
+
 export default function AppView(props: AppViewProps) {
   const { app, user } = props;
 
@@ -102,18 +98,15 @@ export default function AppView(props: AppViewProps) {
 
   const [draftAppData, setDraftAppData] = React.useState<AppData>(app);
 
-  const supabase = createClientComponentClient<Database>();
-
   const [activeFile, setActiveFile] = React.useState<AppFile>(
     getFileToShow(app)
   );
+
   const [editedFileTab, setEditedFileTab] = React.useState<AppFile>();
 
   const [localNodes, setLocalNodes] = React.useState<Record<string, Node>>({});
 
   const router = useRouter();
-  const path = usePathname();
-
   const historyPlayer = React.useMemo(() => createHistoryPlayer(), []);
 
   const runtimePlayer = React.useMemo(() => {
@@ -132,7 +125,7 @@ export default function AppView(props: AppViewProps) {
     type: "stopped",
   });
 
-  const [runtimeDelay, setRuntimeDelay] = useState(300);
+  const [runtimeDelay, setRuntimeDelay] = useState(0);
 
   useEffect(() => {
     runtimePlayer.start();
@@ -188,7 +181,7 @@ export default function AppView(props: AppViewProps) {
 
   useEffect(() => {
     _debugger.onBatchedEvents((events) => {
-      setEvents((prev) => [...prev, ...events]);
+      setEvents((prev) => [...events.reverse(), ...prev]);
     });
   }, [_debugger]);
 
@@ -212,6 +205,8 @@ export default function AppView(props: AppViewProps) {
 
     return unsavedFiles;
   }, [draftAppData, savedAppData]);
+
+  useUnsavedChangesWarning(unsavedFiles.size > 0);
 
   async function fork() {
     const { data: newApp, error } = await supabase.rpc("fork_app", {
@@ -249,7 +244,7 @@ export default function AppView(props: AppViewProps) {
     const url = `${props.baseDomain}/apps/${app.id}`;
     const hashtags = [`Flyde`, `VisualProgramming`];
 
-    const shareUrl = `https://twitter.com/share?text=${encodeURIComponent(
+    const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
       text
     )}&url=${encodeURIComponent(url)}&hashtags=${encodeURIComponent(
       hashtags.join(",")
@@ -266,7 +261,7 @@ export default function AppView(props: AppViewProps) {
       toast("App deleted");
       router.push("/");
     }
-  }, [app.id, router, supabase]);
+  }, [app.id, router]);
 
   const changeActiveFileContent = useCallback(
     (content: string) => {
@@ -279,7 +274,8 @@ export default function AppView(props: AppViewProps) {
 
       setActiveFile((prev) => ({ ...prev, content }));
     },
-    [activeFile]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fileId(activeFile)]
   );
 
   function onDeleteFile(file: AppFile) {
@@ -368,8 +364,6 @@ export default function AppView(props: AppViewProps) {
     setLocalNodes(deps);
   }, [activeFile, draftAppData.files]);
 
-  const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
-
   const startExecution = useCallback(() => {
     runtimePlayer.start();
     executeApp({
@@ -395,38 +389,6 @@ export default function AppView(props: AppViewProps) {
     runtimePlayer.stop();
     // setRuntimeStatus({ type: "stopped" });
   }, [runtimePlayer]);
-
-  const popoverMenu = (
-    <div
-      className="absolute left-0 z-100 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-      role="menu"
-      aria-orientation="vertical"
-      aria-labelledby="menu-button"
-      tabIndex={-1}
-    >
-      <div className="py-1" role="none">
-        <Link
-          href={`/users/${user?.id}`}
-          className="text-gray-700 block px-4 py-2 text-sm"
-          role="menuitem"
-          tabIndex={-1}
-          onClick={() => {
-            setIsUserMenuOpen(false);
-          }}
-        >
-          My apps
-        </Link>
-
-        <form
-          action="/auth/sign-out"
-          method="post"
-          className="text-gray-700 block px-4 py-2 text-sm"
-        >
-          <button>Sign out</button>
-        </form>
-      </div>
-    </div>
-  );
 
   const title = `${savedAppData.title} | Flyde Playground`;
 
@@ -487,26 +449,6 @@ export default function AppView(props: AppViewProps) {
               disabledTooltip="You can only delete apps you created"
               svgIcon={<TrashIcon />}
             />
-
-            {user ? (
-              <Popover
-                isOpen={isUserMenuOpen}
-                positions={["left"]} // preferred positions by priority
-                content={popoverMenu}
-                padding={80}
-                // align="start"
-                onClickOutside={() => setIsUserMenuOpen(false)}
-              >
-                <button
-                  className="text-base"
-                  onClick={() => setIsUserMenuOpen((prev) => !prev)}
-                >
-                  @{user.username}
-                </button>
-              </Popover>
-            ) : (
-              <LoginButton path={path ?? ""} />
-            )}
           </div>
         </div>
       </header>

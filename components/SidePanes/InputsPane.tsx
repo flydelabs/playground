@@ -18,7 +18,7 @@ export function InputsPane(props: InputsPaneProps) {
   const [values, setValues] = useState(new Map<string, string>());
 
   function setValue(key: string, value: string) {
-    setValues(values.set(key, value));
+    setValues((vals) => new Map(vals.set(key, value)));
   }
 
   function emit(key: string) {

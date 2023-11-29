@@ -12,9 +12,6 @@ export const createRuntimeClientDebugger = (
 
   return {
     onEvent: (e) => {
-      if (e.type === DebuggerEventType.ERROR) {
-        console.log("onEvent", e);
-      }
       const fullEvent = {
         ...e,
         time: Date.now(),

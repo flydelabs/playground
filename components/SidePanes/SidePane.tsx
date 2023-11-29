@@ -12,7 +12,7 @@ export function SidePane(props: SidePaneProps) {
     <div
       className={`side-pane flex flex-col ${
         props.grow ? "flex-1" : ""
-      } border-b border-b-foreground/10`}
+      } border-b border-b-foreground/10 max-h-full`}
     >
       <header className="w-full border-b-foreground/10 flex gap-3 flex-row items-center py-2 px-4 border-b">
         {header}

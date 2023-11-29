@@ -19,5 +19,9 @@ export function OutputViewerJsx(props: OutputViewerJsxProps) {
     <span>JSX output values will appear here</span>
   );
 
-  return <SidePane header={header}>{inner}</SidePane>;
+  return (
+    <SidePane header={header}>
+      <div className="flex flex-row justify-center py-10 px-2">{inner}</div>
+    </SidePane>
+  );
 }

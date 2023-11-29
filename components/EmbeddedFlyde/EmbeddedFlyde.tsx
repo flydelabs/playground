@@ -1,30 +1,27 @@
-"use client";
-
-import "@flyde/flow-editor/src/index.scss";
-import {
-  DebuggerContextData,
-  DebuggerContextProvider,
-  DependenciesContextData,
-  DependenciesContextProvider,
-  Loader,
-  type FlowEditorState,
-  type FlydeFlowEditorProps,
-} from "@flyde/flow-editor";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import React from "react";
-import dynamic from "next/dynamic";
 import { defaultNode } from "@/lib/defaultNode";
+import { HistoryPlayer } from "@/lib/executeApp/createHistoryPlayer";
 import {
   FlydeFlow,
-  ImportedNode,
   ResolvedDependencies,
   isBaseNode,
+  ImportedNode,
 } from "@flyde/core";
-import { safeParse } from "@/lib/safeParse";
 import {
-  HistoryPlayer,
-  createHistoryPlayer,
-} from "@/lib/executeApp/createHistoryPlayer";
+  FlowEditorState,
+  DependenciesContextData,
+  DebuggerContextData,
+  DependenciesContextProvider,
+  DebuggerContextProvider,
+} from "@flyde/flow-editor";
+import dynamic from "next/dynamic";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
+import { FullPageLoader } from "../FullPageLoader";
 
 export interface EmbeddedFlydeProps {
   flow: FlydeFlow;
@@ -49,7 +46,7 @@ async function loadStdLib(): Promise<ResolvedDependencies> {
 const DynamicFlowEditor = dynamic(
   () => import("@flyde/flow-editor").then((m) => m.FlowEditor),
   {
-    loading: () => <p>Loading...</p>,
+    loading: () => <FullPageLoader />,
     ssr: false,
   }
 );
@@ -68,83 +65,14 @@ const defaultState: FlowEditorState = {
   },
 };
 
-export interface EmbeddedFlydeFileWrapperProps {
-  content: string;
-  onFileChange: (content: string) => void;
-  fileName: string;
-  localNodes: ResolvedDependencies;
-  historyPlayer: HistoryPlayer;
-}
-
-function debounce<T extends (...args: any[]) => any>(fn: T, wait: number): T {
-  let timeout: any;
-  return function (this: any, ...args: any[]) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => fn.apply(this, args), wait);
-  } as any;
-}
-
-export function EmbeddedFlydeFileWrapper(props: EmbeddedFlydeFileWrapperProps) {
-  const { content, onFileChange, localNodes, historyPlayer } = props;
-  const [flow, setFlow] = useState<FlydeFlow>();
-
-  const [error, setError] = useState<Error>();
-
-  const [textMode, setTextMode] = useState(
-    (typeof window !== "undefined" ? (window as any) : ({} as any))
-      .__textMode === true
-  );
-
-  useEffect(() => {
-    const parsed = safeParse<FlydeFlow>(content);
-    if (parsed.type === "ok") {
-      console.log("parsed.data", parsed.data.node);
-      setFlow(parsed.data);
-    } else {
-      setError(parsed.error as any);
-    }
-  }, [content]);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const onChange = useCallback(
-    debounce((flow: FlydeFlow) => {
-      onFileChange(JSON.stringify(flow, null, 2));
-    }, 300),
-    [onFileChange]
-  );
-
-  if (flow) {
-    if (textMode) {
-      return (
-        <textarea
-          value={content}
-          onChange={(e) => onFileChange(e.target.value)}
-        />
-      );
-    } else {
-      return (
-        <EmbeddedFlyde
-          key={props.fileName}
-          flow={flow}
-          onChange={onChange}
-          localNodes={localNodes}
-          historyPlayer={historyPlayer}
-        />
-      );
-    }
-  } else if (error) {
-    return <p>Error parsing Flyde: {error?.message}</p>;
-  } else {
-    return <Loader />;
-  }
-}
-
 export function EmbeddedFlyde(props: EmbeddedFlydeProps) {
   const { flow, localNodes, onChange, historyPlayer } = props;
   const [state, setState] = useState<FlowEditorState>({
     ...defaultState,
     flow,
   });
+
+  const { flow: stateFlow } = state;
   const [resolvedDependencies, setResolvedDependencies] =
     useState<ResolvedDependencies>({});
 
@@ -155,16 +83,8 @@ export function EmbeddedFlyde(props: EmbeddedFlydeProps) {
   }, [localNodes]);
 
   useEffect(() => {
-    onChange(state.flow);
-  }, [onChange, state.flow]);
-
-  const flowEditorProps: FlydeFlowEditorProps = {
-    state,
-    onChangeEditorState: setState,
-    hideTemplatingTips: true,
-    initialPadding,
-    onExtractInlineNode: noop as any,
-  };
+    onChange(stateFlow);
+  }, [onChange, stateFlow]);
 
   const onRequestImportables: DependenciesContextData["onRequestImportables"] =
     useCallback(async () => {
@@ -204,14 +124,37 @@ export function EmbeddedFlyde(props: EmbeddedFlydeProps) {
   );
 
   if (Object.keys(resolvedDependencies).length === 0) {
-    return <Loader />;
+    return <FullPageLoader />;
   }
 
   return (
     <DependenciesContextProvider value={depsContextValue}>
       <DebuggerContextProvider value={debuggerContextValue}>
-        <DynamicFlowEditor {...flowEditorProps} />
+        <CanvasPositioningWaitHack>
+          <DynamicFlowEditor
+            state={state}
+            onChangeEditorState={setState}
+            hideTemplatingTips={true}
+            initialPadding={initialPadding}
+            onExtractInlineNode={noop as any}
+          />
+        </CanvasPositioningWaitHack>
       </DebuggerContextProvider>
     </DependenciesContextProvider>
+  );
+}
+
+// there's a fraction of a second where the nodes are not positioned correctly in the canvas. TODO - fix this mega hack
+function CanvasPositioningWaitHack(props: { children: React.ReactNode }) {
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    setIsReady(true);
+  }, []);
+
+  return (
+    <div className={`canvas-positioning-hack ${isReady ? "ready" : ""}`}>
+      {props.children}
+    </div>
   );
 }
