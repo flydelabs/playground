@@ -60,7 +60,7 @@ export default function Page({
     return <DynamicAppView app={app} user={user} baseDomain={baseDomain} />;
   } else {
     return (
-      <div className="flex flex-col nunito text-center my-10">
+      <div className="flex flex-col text-center my-10">
         <h1 className="text-2xl font-bold">Flyde Playground</h1>
         <p className="text-lg">App not found</p>
         <Link href={`/`}>View all apps</Link>

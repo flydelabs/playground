@@ -4,20 +4,18 @@ import "@/styles/globals.css";
 import "@/styles/reset-bp.css";
 
 import type { AppProps } from "next/app";
-import { Nunito } from "next/font/google";
-import Head from "next/head";
 import Script from "next/script";
 import React from "react";
 import { Tooltip } from "react-tooltip";
+import NextNProgress from "nextjs-progressbar";
+import type { NProgressOptions } from "nprogress";
 
-const nunito = Nunito({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
+const npOptions: Partial<NProgressOptions> = { showSpinner: false };
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <div className={`main-container w-full h-screen ${nunito.className}`}>
+    <div className={`main-container w-full h-screen`}>
+      <NextNProgress options={npOptions} />
       <Script src="https://www.googletagmanager.com/gtag/js?id=G-YFLY9DXCYH" />
       <Script id="google-analytics">
         {`

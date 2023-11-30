@@ -39,7 +39,7 @@ export default function Home({
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   if (!apps.length) {
     return (
-      <main className="flex flex-col nunito text-center my-10">
+      <main className="flex flex-col text-center my-10">
         <h1 className="text-2xl font-bold">Flyde Playground</h1>
         <p className="text-lg">No apps found for this user</p>
         <Link href={`/`}>View all apps</Link>
@@ -48,7 +48,7 @@ export default function Home({
   } else {
     const userName = apps[0].creator_name; // hackish!
     return (
-      <main className="flex  flex-col nunito text-center my-10">
+      <main className="flex  flex-col text-center my-10">
         <h1 className="text-2xl font-bold">Flyde Playground</h1>
         <h2 className="text-xl font-semibold">Apps by @{userName}</h2>
         <Link href={`/`}>View all apps</Link>

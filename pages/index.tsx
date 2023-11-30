@@ -1,4 +1,3 @@
-import { Nunito } from "next/font/google";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next/types";
 import { PlaygroundApp } from "@/types/entities";
 import { createPagesServerClient } from "@supabase/auth-helpers-nextjs";
@@ -35,16 +34,11 @@ export const getServerSideProps: GetServerSideProps<{
   };
 };
 
-const nunito = Nunito({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
-
 export default function Home({
   apps,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   return (
-    <main className="flex flex-col nunito text-center my-10">
+    <main className="flex flex-col text-center my-10">
       <h1 className="text-2xl font-bold">Flyde Playground</h1>
       <h2 className="text-xl font-semibold">Latest apps</h2>
 

@@ -46,7 +46,8 @@ export function InputsPane(props: InputsPaneProps) {
       <SidePane header={<span className="font-semibold">Inputs</span>}>
         <div className="px-4 py-4 ">
           <p className="text-slate-800">
-            This flow has {inputs.length} main input{" "}
+            This flow has {inputs.length} main input
+            {inputs.length === 1 ? "" : "s"}
             <InfoTooltip
               content="Main inputs act as external arguments to your flow. Use the controls
             below to emit values to them."
@@ -75,9 +76,11 @@ export function InputsPane(props: InputsPaneProps) {
               </div>
             );
           })}
-          <div className="mt-4 italic text-slate-800">
-            App must be running for inputs to be emitted.
-          </div>
+          {inputs.length > 0 ? (
+            <div className="mt-4 italic text-slate-800">
+              App must be running for inputs to be emitted.
+            </div>
+          ) : null}
         </div>
       </SidePane>
     );

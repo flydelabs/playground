@@ -12,7 +12,7 @@ export function InfoTooltip({
 }) {
   return (
     <div
-      className={`relative inline-block align-middle mb-1 ${className}`}
+      className={`relative inline-block align-middle mb-1 ml-1 ${className}`}
       data-tooltip-id={"main-tooltip"}
       data-tooltip-content={content}
     >
